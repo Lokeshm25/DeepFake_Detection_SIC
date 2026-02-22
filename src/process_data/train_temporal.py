@@ -173,7 +173,7 @@ def main():
     optimizer = optim.AdamW(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.5, patience=2)
     criterion = nn.BCEWithLogitsLoss()
-    #print(model)
+    print(model)
 
     # quick sanity test
     # feat_dim = FEAT_DIM  # from earlier
@@ -201,7 +201,7 @@ def main():
         all_preds, all_labels = [], []
         running_loss = 0.0
 
-        for seqs, lengths, labels, _ in tqdm(train_loader, desc=f"Epoch {epoch}"):
+        for seqs, lengths, labels, _ in tqdm(train_loader, desc=f"Epoch {epoch}", unit="batch", disable=False):
             seqs = seqs.to(DEVICE)
             lengths = lengths.to(DEVICE)
             labels = labels.to(DEVICE)
