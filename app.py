@@ -19,6 +19,7 @@ import tempfile
 import traceback
 from datetime import datetime
 from pathlib import Path
+import joblib
 
 import cv2
 from pyngrok import ngrok
@@ -47,10 +48,10 @@ FRAMES_TO_SAMPLE = 20
 MAX_FILE_MB    = 500
 MAX_HISTORY    = 8
 
-CHECKPOINT_DIR = Path("checkpoints")
-SPATIAL_CKPT   = "/content/drive/MyDrive/Colab Notebooks/SIC/checkpoints/spatial/spatial_best_valAUC.pth"
-TEMPORAL_CKPT  = "/content/drive/MyDrive/Colab Notebooks/SIC/checkpoints/temporal/temporal_best_valAUC.pth"
-ENSEMBLE_CKPT  = "/content/drive/MyDrive/Colab Notebooks/SIC/checkpoints/ensemble/ensemble_final.joblib"
+ROOT = Path.cwd()
+SPATIAL_CKPT   = ROOT / "checkpoints" / "spatial" / "spatial_best_valAUC.pth"
+TEMPORAL_CKPT  = ROOT / "checkpoints" / "temporal" / "temporal_best_valAUC.pth"
+ENSEMBLE_CKPT  = ROOT / "checkpoints" / "ensemble_final" / "ensemble_final.joblib"
 
 st.set_page_config(
     page_title="VeriFace | Enterprise Deepfake Detection",
