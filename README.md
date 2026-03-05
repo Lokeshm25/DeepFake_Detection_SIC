@@ -183,7 +183,7 @@ streamlit run app.py
 ## 📊 Results (summary)
 
 * Internal (example): Training OOF AUC ≈ 0.99, Val AUC ≈ 0.97, Internal Test AUC ≈ 0.97.
-* External (Celeb-DF): AUC ≈ 0.61; default threshold (0.5) gave Real recall ≈ 0.93, Fake recall ≈ 0.24, accuracy ≈ 0.59. See `notebooks/eval_celebdf.ipynb`.
+* External (Celeb-DF): AUC ≈ 0.65; default threshold (0.5) gave Real recall ≈ 0.93, Fake recall ≈ 0.24, accuracy ≈ 0.59. See `notebooks/eval_celebdf.ipynb`.
 
 ---
 
