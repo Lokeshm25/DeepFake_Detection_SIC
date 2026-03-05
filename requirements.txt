@@ -1,0 +1,20 @@
+torch
+torchvision
+timm
+numpy
+pandas
+scikit-learn
+opencv-python
+Pillow
+joblib
+matplotlib
+seaborn
+streamlit
+tqdm
+facenet-pytorch
+
+#Install additional libraries as needed:
+# albumentations   # advanced augmentations
+# wandb            # experiment tracking
+# onnxruntime      # model export / inference
+# torchinfo        # model summary
