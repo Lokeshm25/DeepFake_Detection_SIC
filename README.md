@@ -1,4 +1,4 @@
-# Robust & Explainable Deepfake Detection System
+# Deepfake Detection System
 
 An end-to-end **Deepfake Detection** pipeline combining:
 
