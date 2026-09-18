@@ -1,0 +1,80 @@
+# configs/fusion_ssm.yaml — P5-T3 reliability-conditioned selective fusion
+# This is a STUB — values to be finalized during Phase 5.
+# This is THE CORE CONFIG for the paper's mechanism.
+
+# Gate 0-A result — written by P0-T1
+operator: mamba_cuda               # mamba_cuda | mamba_torch | film_attn
+
+# Backbone (P5-T1)
+backbone:
+  spatial: clip_vit_b16
+  temporal: clip_vit_b16
+  frequency: clip_vit_b16
+  freeze_backbone: true
+  adapter:
+    type: bottleneck               # bottleneck adapter per stream
+    bottleneck_dim: 64
+    init: zero                     # zero-init so frozen model = baseline at init
+
+# Reliability estimator (P5-T2)
+reliability:
+  input_features: [blockiness, hf_ratio, entropy, blur_score]
+  hidden_dim: 128
+  output_dim_per_stream: 1         # scalar reliability per stream
+  training: self_supervised        # from controlled CRF degradation
+  gate_monotonicity_test: true     # invariant: higher CRF → lower reliability
+
+# Token construction (P5-T3)
+tokens:
+  streams: [spatial, temporal, frequency]
+  interleave: true                 # interleaved | separate
+  token_dim: 256                   # projected from backbone feat dim
+  sequence_length: 96              # 32 frames × 3 streams (interleaved)
+
+# The conditioning — the paper's core mechanism
+conditioning:
+  gate: conditioned                # none | static | conditioned | oracle
+  reliability_to_delta: true       # r → Δ modulation
+  conf_scale_init: zero            # invariant 7
+  film_gamma_init: zero            # invariant 7
+  w_rel_init: zero                 # invariant 7
+
+# SSM parameters
+ssm:
+  d_model: 256
+  d_state: 16
+  d_conv: 4
+  expand: 2
+
+# Calibration (P5-T4)
+calibration:
+  loss_weight_sweep: [0.0, 0.05, 0.1, 0.2]
+  metric: ece                      # gate: ECE improves under shift with no AUC regression
+
+# SBI (P5-T4)
+sbi:
+  mode: stream_specific            # shared | stream_specific
+  # Each stream sees its own SBI variant — non-redundant supervision
+
+# Ablation surface (P6-T4)
+ablation:
+  gate: conditioned                # none | static | conditioned | oracle
+  operator: mamba_cuda             # mamba_cuda | mamba_torch | film_attn | transformer
+  tokens: interleaved              # interleaved | separate
+  backbone: adapted                # frozen | adapted
+  sbi: stream_specific             # shared | stream_specific
+  reliability: learned             # learned | true_crf
+
+# Training
+training:
+  dataset: ffpp_c23
+  epochs: 30
+  batch_size: 16                   # 12GB VRAM budget
+  optimizer: adamw
+  lr: 5.0e-5
+  weight_decay: 1.0e-4
+  scheduler: cosine
+  warmup_epochs: 3
+  amp: true                        # -1e9 fix applied by P1-T3
+  seed: 42
+  gradient_accumulation: 2

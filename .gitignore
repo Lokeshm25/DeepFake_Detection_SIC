@@ -40,3 +40,23 @@ models/
 ensemble_outputs/
 structure.txt
 testing/
+
+# Research pipeline outputs
+paper_assets/
+per_video_scores/
+
+# Data directories (large / dataset-specific)
+data/raw/
+data/crops/
+data/splits/
+
+# Agent settings
+.claude/
+
+# Config overrides
+configs/*.local.yaml
+
+# Python build artifacts
+*.egg-info/
+dist/
+build/

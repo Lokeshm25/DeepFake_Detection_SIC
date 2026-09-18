@@ -1,12 +1,18 @@
 # Deepfake Detection System
 
+> ⚠️ **Research Integrity Notice**: The results reported below are from the original capstone
+> pipeline and contain a known data leakage defect: 905 Celeb-DF videos were included in the
+> training/validation splits, inflating all cross-dataset metrics. This project is being rebuilt
+> with corrected methodology — see `ROADMAP.md` for the research protocol. Do not cite the numbers
+> below as valid external evaluation results.
+
 An end-to-end **Deepfake Detection** pipeline combining:
 
 * **EfficientNet-B3** — frame-level spatial feature extraction
 * **Bi-LSTM + Attention** — temporal sequence modeling
 * **OOF Stacking + Platt Calibration (Logistic Regression)** — ensemble fusion for calibrated probabilities
 
-This project includes preprocessing, training notebooks/scripts, embedding caching, honest external evaluation (Celeb-DF), and a Streamlit demo.
+This project includes preprocessing, training notebooks/scripts, embedding caching, and a Streamlit demo. *(Note: The original Celeb-DF evaluation was contaminated — see disclaimer above.)*
 
 ---
 
@@ -182,8 +188,10 @@ streamlit run app.py
 
 ## 📊 Results (summary)
 
+> ⚠️ **These results are from the contaminated pipeline.** See integrity notice at the top.
+
 * Internal (example): Training OOF AUC ≈ 0.99, Val AUC ≈ 0.97, Internal Test AUC ≈ 0.97.
-* External (Celeb-DF): AUC ≈ 0.65; default threshold (0.5) gave Real recall ≈ 0.93, Fake recall ≈ 0.24, accuracy ≈ 0.59. See `notebooks/eval_celebdf.ipynb`.
+* ~~External (Celeb-DF): AUC ≈ 0.65~~ — **Invalidated.** Celeb-DF was in the training data. See `RESEARCH_ANALYSIS.md` §1.2 for details.
 
 ---
 

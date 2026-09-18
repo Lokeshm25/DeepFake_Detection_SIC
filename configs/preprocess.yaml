@@ -1,0 +1,33 @@
+# configs/preprocess.yaml — P3-T3 preprocessing pipeline
+# This is a STUB — values to be finalized during Phase 3.
+
+dataset_root: data/raw/
+output_root: data/crops/
+splits_dir: data/splits/
+
+face_detector: retinaface          # retinaface | mtcnn | s3fd — settled in P3-T1
+crop_margin: 1.3                   # multiplicative margin around detection box
+output_size: [224, 224]            # will be 300 once backbone resolution addressed in P4-T2
+frames_per_video: 32               # upgraded from 8 in original pipeline
+
+# Datasets — roles fixed per CLAUDE.md invariant 1
+datasets:
+  ffpp_c23:
+    role: train                    # ONLY training dataset
+    path: data/raw/FaceForensics/c23/
+    methods: [Deepfakes, Face2Face, FaceSwap, NeuralTextures]
+  ffpp_c40:
+    role: eval
+    path: data/raw/FaceForensics/c40/
+  celebdf_v2:
+    role: eval                     # NEVER train
+    path: data/raw/CelebDF-v2/
+  dfdc:
+    role: eval
+    path: data/raw/DFDC/
+  dfdcp:
+    role: eval
+    path: data/raw/DFDCP/
+  dfd:
+    role: eval
+    path: data/raw/DFD/

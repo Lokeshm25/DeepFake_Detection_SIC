@@ -1,0 +1,37 @@
+For Previous ChatGPT and Gemini combine:
+
+You know my project, its pipeline, workflow and why i am doing this.
+So now deep research about this domain and find me the areas and topics on which i can research in this DeepFake domain.
+Also mention the research papers from which you have taken the future research ideas and proof check all the ideas and areas, if they are already researched or yet to be researched.
+Suggest me new ideas if you got some but after proofchecking the ideas thoroughly.
+Mention all the references from which I can take help building my research, idea and workable project.
+
+For Claude critics:
+
+Proof check this research topic and concept for novelty. I want to research in the domain of deepfake detection. I have this plan decieded by GPT and Gemini, deep research on this and Proof check all:
+Build a calibrated tri-stream deepfake detector on top of your current pipeline, with spatial, temporal, and frequency cues fused in a cross-attentive architecture, and train it with Self-Blended Images (SBIs) to improve cross-dataset generalization. Keep calibration and explainability as core parts of the evaluation so the model is not just accurate, but also trustworthy.
+Final blueprint
+Your current EfficientNet + Bi-LSTM + ensemble pipeline is the right foundation. The strongest research extension is to upgrade it into:
+Spatial stream → frame-level artifact learning Temporal stream → motion and inconsistency learning Frequency stream → spectral artifact learning Cross-attentive fusion → learn how these three streams support each other Calibration layer → make probabilities reliable Grad-CAM / attention maps → make predictions explainable SBI training → improve robustness across unseen datasets
+Final research conclusion
+This gives you a project that is:
+* technically strong, because it builds on a working multi-stage pipeline
+* research-worthy, because it adds real novelty through tri-stream fusion and SBI-driven generalization
+* practically useful, because calibration and external testing make the detector more trustworthy
+* paper-ready, because it has a clear contribution, measurable improvement, and realistic evaluation on unseen data
+Best paper framing
+“A Calibrated Tri-Stream Deepfake Detector with Cross-Attentive Fusion and SBI-Driven Generalization.”
+
+For Latest Gemini and NotebookLM research:
+
+I want to do research work in deepfake domain.
+The three attachments are:
+1. Current DeepFake detector pipeline (used as a capstone project).
+2. Research Decision (taken by gemini and chatgpt by there researches and combined decision at final).
+3. Claude Critics and Analysis (Have the full critics and analysis of that research decision that claude gave after giving full context of project and research decision).
+Now I want you to deeply research all research papers, review papers, white papers, conference papers and current technological advancements in this that relates to my research topic.
+Then give a current based deep analysis of that research decision for various repeating parts, or novelty parts in that. The analysis should be such deep like Claude one with citation to each and every paper or link related to the analysis of that topic, paper or research decision.
+Then finally suggest me what can be done today as a best novelty thing in this. You can check the papers future improvements to suggest that are not yet implemented and also give any genuine suggestions by you.
+I am asking the novelty and its suggestions because claude marked Full system combination as genuine contribution, butit's compositional, not architectural.
+So I will continue with my research decision but I want to explore any feasible architectural contributions as well.
+You should distribute the research in two parts that 1st is fully based on my already given research decision and analysis with that and 2nd with new findings, analysis and suggestions and all.

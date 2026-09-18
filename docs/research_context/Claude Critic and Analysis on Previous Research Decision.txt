@@ -1,0 +1,82 @@
+Now I have everything I need for a rigorous audit. Here's the full analysis:
+
+Already published (not novel) (Red)
+Partially novel (some differentiation) (Yellow)
+Genuinely novel contribution (Green)
+Spatial stream: EfficientNet frame artifacts (Red)
+→ Covered by CAST (2026), LAA-Net (2024), dozens of CNN papers
+Temporal stream: Bi-LSTM / motion inconsistency (Red)
+→ CAST (2026), BMNet (2025), CNN-LSTM papers (2024–25)
+Frequency stream: DCT / FFT spectral artifacts (Red)
+→ FSBI (2025), dual-stream papers Uddin et al. (2025), many others
+Cross-attentive fusion: All 3 streams interacting (Yellow)
+→ CAST covers spatial+temporal only. Adding frequency as 3rd stream with cross-attn is modestly differentiated.
+SBI training: Pseudo-fake generalization (Red)
+→ Shiohara & Yamasaki CVPR 2022. FSBI (2025) already extends it with frequency. Well-established technique.
+Calibration layer: Reliable probability outputs (Yellow)
+→ Jin et al. (Visual Intelligence 2025) introduced deepfake calibration. Applying it to tri-stream is new.
+Grad-CAM explainability: Attention / saliency maps (Red)
+→ Standard practice. Used in most recent deepfake detection papers including FSBI, CAE-Net, CAST.
+Full system combination: Tri-stream + SBI + calibration (Green)
+→ No single paper combines all three. This is the genuine contribution, but
+it's compositional, not architectural. Strongest differentiator from CAST.
+
+Novelty audit: what the literature actually says
+
+Bottom line first: The plan is not novel at the component level. It is modestly novel at the system level, and only if you frame it correctly. GPT and Gemini gave you a generous but inaccurate picture. Here is what the papers say.
+
+What is already fully published
+
+Spatial stream (EfficientNet frame-level detection): This is a baseline technique from 2019–2022. A 2026 paper in Scientific Reports uses EfficientNet-B7 with a spatial-frequency hybrid and CBAM attention for interpretable detection — that alone covers much of your "spatial stream."
+
+Temporal stream with cross-attention: The CAST paper (published in Knowledge-Based Systems, February 2026) proposes exactly a cross-attention-based spatial-temporal fusion for deepfake detection, using EfficientNet as the spatial backbone to extract spatial features and a Transformer for temporal modeling, then fusing them with cross-attention. This is the single most dangerous paper for your proposal. Your "current pipeline" (EfficientNet + Bi-LSTM) plus cross-attentive fusion of spatial and temporal streams is essentially what CAST does. 
+arXiv
+
+Frequency stream with cross-attention: A 2025 paper in Multimedia Systems presents a framework using multi-scale cross-attention together with DCT-based frequency features and the Xception network to fuse spatial and frequency information for deepfake face detection. Dual-stream spatial+frequency with cross-attention is therefore also covered. 
+Springer
+
+SBI training: The original SBI method from CVPR 2022 (Shiohara and Yamasaki, University of Tokyo) generates pseudo-fake training data by blending distorted copies of pristine images to simulate common forgery artifacts, and shows this improves generalization to unknown manipulations and scenes. This is a three-year-old, well-cited method. Additionally, the FSBI paper (2025) already extends SBI by combining it with discrete wavelet transforms to extract frequency-domain features from the blended images, achieving a more generic detector. So even "SBI + frequency" is already published. 
+arxiv
+ScienceDirect
+
+Grad-CAM / attention explainability: Standard practice in every recent paper in this domain. FSBI, CAE-Net, and CAST all include saliency maps. This is not a contribution; it is a baseline expectation.
+
+What has some differentiation
+
+Tri-stream cross-attention (all three simultaneously): CAST fuses spatial and temporal. The Uddin et al. 2025 paper fuses spatial and frequency. No paper found fuses all three in a single cross-attentive architecture where each stream can attend to the others. This is a real, if incremental, architectural extension.
+
+Calibration applied to a tri-stream system: Jin et al. (Visual Intelligence 2025) introduce the concept of deepfake detection calibration, focusing on aligning predicted probabilities with actual distributions to address overconfidence in deepfake detectors. Their method uses "packed-ensembles" but does not combine this with a tri-stream architecture or SBI training. Applying calibration inside a tri-stream system trained with SBI has not been done together. 
+SciOpen
+
+The actual contribution (and its real weaknesses)
+
+The genuine claim is the combination: a single architecture that unifies tri-stream cross-attentive fusion + SBI-driven generalization + output calibration. No paper does all three together. That is factually true.
+
+However, three serious problems remain:
+
+1. This is a composition paper, not an invention paper. Top-tier venues (CVPR, ICCV, NeurIPS, ECCV) are skeptical of papers whose main contribution is combining three existing methods. The reviewers will ask: "What did you have to invent to make these work together? Why doesn't concatenation or simple late fusion work?" You need a technical reason why cross-attention across all three streams requires a new design decision that isn't obvious from reading CAST + FSBI.
+
+2. CAST is a direct competitor and very recent. CAST explicitly frames its contribution as introducing cross-attention to fuse spatial and temporal features extracted from a CNN-Transformer network, enabling temporal representations to attend selectively to manipulation-prone spatial regions. Your paper title will immediately invite the comparison: "How is this different from CAST plus a frequency branch?" You need a substantive answer. 
+ScienceDirect
+
+3. Bi-LSTM for temporal modeling is dated. CAST and all 2025–2026 papers use Transformers for temporal modeling. Framing Bi-LSTM as the temporal stream will draw criticism from reviewers unless you justify it explicitly (e.g. for efficiency on video sequences, or as an ablation showing parity with Transformers).
+
+Concrete recommendations to strengthen novelty
+
+Rather than just combining three streams, add one of these harder contributions:
+
+Option A — Dynamic stream weighting. Instead of fixed cross-attention, have the model learn to dynamically de-emphasize streams based on compression level or resolution. This addresses a known real-world failure mode (frequency artifacts vanish under JPEG compression).
+
+Option B — Stream-specific SBI augmentation. Design separate SBI augmentation strategies per stream — spatial SBI blends texture boundaries, temporal SBI introduces subtle frame-level flicker, frequency SBI injects high-frequency noise — and show each stream learns qualitatively different artifacts. This upgrades SBI from a training trick to a design principle.
+
+Option C — Cross-dataset calibration evaluation. The calibration contribution becomes much stronger if you measure Expected Calibration Error (ECE) across datasets, not just accuracy. The Jin et al. 2025 paper shows deepfake detectors are severely overconfident on out-of-distribution data. If you show your tri-stream model is better calibrated cross-dataset specifically because of the fusion design, that is a publishable finding, not just an add-on.
+
+Revised paper framing
+
+The title "A Calibrated Tri-Stream Deepfake Detector with Cross-Attentive Fusion and SBI-Driven Generalization" is descriptive but reads as a list of parts. A sharper framing would be:
+
+"Beyond Dual-Stream Fusion: Calibrated Tri-Stream Detection with Cross-Attentive Frequency-Spatial-Temporal Reasoning"
+
+— because this positions the contribution as solving CAST's blind spot (no frequency) and the frequency-stream papers' blind spot (no temporal), rather than just adding a third branch.
+
+For venue targeting: this work as currently described is at the level of a good mid-tier conference (WACV, ICPR, ACM MM) or a solid journal (IEEE TIFS, Pattern Recognition). To reach CVPR or ICCV level, you need one of the harder contributions listed above.

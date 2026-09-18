@@ -1,0 +1,35 @@
+# configs/baseline_b3.yaml — P4-T1/T2 baseline retrain
+# This is a STUB — values to be finalized during Phase 4.
+
+model:
+  backbone: efficientnet_b3
+  pretrained: true
+  head_hidden: 512
+  dropout: 0.4
+  input_size: 224                  # native 300 addressed in P4-T2
+
+temporal:
+  type: bilstm
+  hidden_dim: 512
+  n_layers: 2
+  bidirectional: true
+  dropout: 0.3
+
+training:
+  dataset: ffpp_c23
+  epochs: 25
+  batch_size: 32
+  optimizer: adamw
+  lr: 1.0e-4
+  weight_decay: 1.0e-4
+  scheduler: cosine
+  warmup_epochs: 2
+  amp: false                       # blocked by -1e9 fp16 bug until P1-T3 fixes it
+  seed: 42                         # also run with 1337, 2024 for variance
+  frames_per_video: 32
+
+evaluation:
+  threshold_source: val            # NEVER from test set — invariant 2
+  metrics: [auc, ap, eer, accuracy]
+  bootstrap_over: videos           # NEVER frames — invariant 8
+  bootstrap_n: 2000

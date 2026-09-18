@@ -1,0 +1,38 @@
+# configs/eval_matrix.yaml — P6-T1 final cross-dataset evaluation
+# This is a STUB — values to be finalized during Phase 6.
+
+models:
+  - baseline_b3          # P4-T1
+  - dfb_xception         # P4-T3 DeepfakeBench
+  - dfb_efficientnet_b4  # P4-T3 DeepfakeBench
+  - clip_adapters        # P5-T1
+  - fusion_nogate        # P5-T3 ablation: gate=none
+  - fusion_static        # P5-T3 ablation: gate=static
+  - fusion_conditioned   # P5-T3 full model
+
+test_sets:
+  - ffpp_c23             # in-domain
+  - ffpp_c40             # compression shift
+  - cdf2                 # cross-dataset
+  - dfdc                 # cross-dataset
+  - dfdcp                # cross-dataset
+  - dfd                  # cross-dataset
+
+seeds: [42, 1337, 2024]
+
+metrics:
+  primary: auc
+  secondary: [ap, eer, accuracy]
+  threshold_source: ffpp_val       # NEVER per test set — invariant 2
+  bootstrap:
+    over: videos                   # NEVER frames — invariant 8
+    n_resamples: 2000
+
+output:
+  base_dir: paper_assets/
+  per_seed_csv: C-23_final_matrix.csv
+  aggregated_csv: C-23_final_matrix_aggregated.csv
+  per_video_scores_dir: per_video_scores/
+
+# Acceptance: 7 models × 6 test sets × 3 seeds = 126 rows, no gaps.
+# If any cross-dataset AUC > ~0.95, STOP and re-run verify_splits.

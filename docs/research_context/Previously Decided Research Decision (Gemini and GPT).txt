@@ -1,0 +1,25 @@
+Build a calibrated tri-stream deepfake detector on top of your current pipeline, with spatial, temporal, and frequency cues fused in a cross-attentive architecture, and train it with Self-Blended Images (SBIs) to improve cross-dataset generalization. Keep calibration and explainability as core parts of the evaluation so the model is not just accurate, but also trustworthy.
+
+Final blueprint
+
+Your current EfficientNet + Bi-LSTM + ensemble pipeline is the right foundation. The strongest research extension is to upgrade it into:
+
+Spatial stream → frame-level artifact learning
+Temporal stream → motion and inconsistency learning
+Frequency stream → spectral artifact learning
+Cross-attentive fusion → learn how these three streams support each other
+Calibration layer → make probabilities reliable
+Grad-CAM / attention maps → make predictions explainable
+SBI training → improve robustness across unseen datasets
+
+Final research conclusion
+
+This gives you a project that is:
+
+technically strong, because it builds on a working multi-stage pipeline
+research-worthy, because it adds real novelty through tri-stream fusion and SBI-driven generalization
+practically useful, because calibration and external testing make the detector more trustworthy
+paper-ready, because it has a clear contribution, measurable improvement, and realistic evaluation on unseen data
+Best paper framing
+
+“A Calibrated Tri-Stream Deepfake Detector with Cross-Attentive Fusion and SBI-Driven Generalization.”
