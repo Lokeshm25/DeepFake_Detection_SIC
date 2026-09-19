@@ -44,6 +44,7 @@ testing/
 # Research pipeline outputs
 paper_assets/
 per_video_scores/
+environment.txt
 
 # Data directories (large / dataset-specific)
 data/raw/
