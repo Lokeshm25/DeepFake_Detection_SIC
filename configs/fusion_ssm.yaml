@@ -20,7 +20,8 @@ tokens:
 
 # Conditioning — the paper's core mechanism. Which gate is active is set by ablation.gate below.
 conditioning:
-  rel_dim: 4                       # r_t in R^4 per stream (reliability.yaml)
+  rel_dim: 4                       # r_t in R^4 per FRAME, shared by its 3 tokens (reliability.yaml)
+  w_rel: per_stream                # one W_rel (and FiLM gamma) per stream — decided 2026-11-21
   w_rel_init: zero                 # invariant 7
   film_gamma_init: zero            # invariant 7 — gamma_B, gamma_C (and gamma_k/v for film_attn)
   conf_scale_init: zero            # invariant 7

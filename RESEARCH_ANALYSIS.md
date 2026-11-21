@@ -403,7 +403,8 @@ framed as novelty, it would be the paper's weakest claim.
 **interleaved multi-stream token sequence**, replacing both the Bi-LSTM and the cross-attention.
 
 **The hinge — why this is one idea and not three.** Condition the SSM's selection parameter **Δ**
-(and the B/C projections) on an estimated per-stream reliability descriptor. In a selective SSM, Δ
+(and the B/C projections) on an estimated frame-level reliability descriptor, through a learned per-stream response
+(one zero-init `W_rel` per stream). In a selective SSM, Δ
 governs how strongly the current token is written into the hidden state. So Δ is not an arbitrary
 place to inject reliability — it is *the* natural home for "trust this stream less, right now."
 Selectivity already *is* input-dependent gating; conditioning it on estimated reliability makes

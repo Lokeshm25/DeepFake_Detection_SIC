@@ -753,19 +753,26 @@ Standard Mamba: `Δ_t = softplus(W_Δ x_t + b_Δ)`.
 **Condition it on reliability:**
 
 ```python
-delta_t = F.softplus(self.W_delta(x_t) + self.b_delta + self.W_rel(r_t))
+delta_t = F.softplus(self.W_delta(x_t) + self.b_delta + self.W_rel[k](r_t))
 ```
-where `r_t ∈ R^4` is the reliability descriptor for the stream that token `t` belongs to.
+where `r_t ∈ R^4` is the reliability descriptor of the **frame** token `t` comes from (one
+estimator, one descriptor per frame, §P5-T2), and `k ∈ {spatial, frequency, temporal}` is the
+token's stream. All three tokens of a frame share `r_t`; each stream has its **own** `W_rel[k]`.
+Degradation is a property of the frame; how much each stream should trust it is learned. A
+single shared `W_rel` would add the same term to all three streams and could not express
+"blockiness hurts the frequency stream but not the temporal one", which is the per-stream claim.
+The temporal token `m_t` (built from frames t-1 and t) uses `r_t`. *(Decided 2026-11-21.)*
 
 ```python
 class ReliabilityConditionedSSM(nn.Module):
     def __init__(self, d_model, d_state=16, rel_dim=4, operator="mamba_cuda"):
         """operator from configs/fusion_ssm.yaml (set by P0-T1).
-        W_rel: Linear(rel_dim, d_model), ZERO-INITIALISED -> training starts as
-        standard Mamba, so any gain is attributable to conditioning rather than
-        to a different initialisation. This is what makes the ablation honest.
-        Also condition B and C projections via FiLM:
-            B_t = B_t * (1 + gamma_B(r_t)),  gamma_B zero-init
+        W_rel: one Linear(rel_dim, d_model) PER STREAM (3 total), ALL ZERO-INITIALISED
+        -> training starts as standard Mamba, so any gain is attributable to
+        conditioning rather than to a different initialisation. This is what makes
+        the ablation honest.
+        Also condition B and C projections via FiLM, also per stream:
+            B_t = B_t * (1 + gamma_B[k](r_t)),  gamma_B[k] zero-init (likewise C)
         """
 ```
 
@@ -784,7 +791,7 @@ so the comparison isolates the mechanism rather than confounding it with initial
 If `P0-T1` reached attempt 3 and even that is too slow, use cross-attention with FiLM-conditioned
 K/V:
 ```python
-K = K * (1 + gamma_k(r));  V = V * (1 + gamma_v(r))     # gamma_* zero-init
+K = K * (1 + gamma_k[k](r_t));  V = V * (1 + gamma_v[k](r_t))   # per stream k, zero-init
 # optionally: attn_logits = attn_logits + beta(r)
 ```
 Same thesis, same experiments, same claims. Only the operator differs — and `RESEARCH_ANALYSIS.md`
@@ -969,7 +976,8 @@ it names.
 # configs/fusion_ssm.yaml — the ablation surface
 ablation:
   gate: conditioned      # none | static | conditioned | oracle
-  operator: mamba_cuda   # mamba_cuda | mamba_torch | film_attn | transformer
+  operator: null         # null = use the top-level `operator` (Gate 0-A result).
+                         # Set `transformer` ONLY for the SSM-vs-Transformer row.
   tokens: interleaved    # interleaved | separate
   backbone: adapted      # frozen | adapted
   sbi: stream_specific   # shared | stream_specific
@@ -982,7 +990,7 @@ ablation:
 | static-gate | `gate: static` | is it the *input-dependence*, or just per-stream weights? |
 | learned-gate | `gate: conditioned` | the full model |
 | **oracle-gate** | `gate: oracle` | upper bound — feeds the *true* degradation parameters |
-| SSM vs Transformer | `operator: transformer` | the operator, or just capacity? |
+| SSM vs Transformer | `ablation.operator: transformer` | the operator, or just capacity? (if Gate 0-A ended on `film_attn`, this row is FiLM-attention vs plain Transformer — rename it in the paper) |
 | interleaved vs separate | `tokens: separate` | does interleaving matter? |
 | frozen vs adapted | `backbone: frozen` | how much is the backbone alone? |
 | shared vs stream-specific SBI | `sbi: shared` | does non-redundant supervision help? |
@@ -1081,7 +1089,7 @@ generally rather than evidence quality, and `C-20`'s interpretation weakens. Rep
 **Outputs go under `C-24`** — this is the same robustness claim as the compression sweep, so it
 extends that capture rather than adding a thirtieth. Files: `C-24_robustness_sweep.png` + `.pdf` +
 `_data.csv` (model, seed, perturbation, level, auc, ci_low, ci_high, n_videos), and
-`C-24_robustness_reliability.csv` (perturbation, level, mean per-stream reliability) for the
+`C-24_robustness_reliability.csv` (perturbation, level, mean of each of the 4 descriptor components, mean per-stream trust as defined for `C-21`) for the
 frame-dropping argument above. Add the files to `captures.yaml` under `C-24`; do not create a new ID.
 
 Per-video scores at every perturbation level, as always. Re-encoding the eval sets is the expensive

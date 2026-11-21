@@ -77,11 +77,13 @@ Tokens per frame t: spatial `s_t`, frequency `f_t` (DCT/FFT map -> small CNN), t
 ```python
 class ReliabilityConditionedSSM(nn.Module):
     def __init__(self, d_model, d_state=16, rel_dim=4, operator="mamba_cuda"):
-        """delta_t = softplus(W_delta(x_t) + b_delta + W_rel(r_t)), W_rel zero-init.
-        B_t = B_t * (1 + gamma_B(r_t)), gamma_B zero-init (likewise C)."""
+        """delta_t = softplus(W_delta(x_t) + b_delta + W_rel[k](r_t))
+        r_t: the frame's 4-D descriptor, shared by its 3 tokens; k: the token's stream.
+        One W_rel per stream (3), all zero-init.
+        B_t = B_t * (1 + gamma_B[k](r_t)), gamma_B[k] zero-init (likewise C)."""
 ```
-Fallback `operator: film_attn`: cross-attention with `K*(1+gamma_k(r))`, `V*(1+gamma_v(r))`,
-gammas zero-init.
+Fallback `operator: film_attn`: cross-attention with `K*(1+gamma_k[k](r_t))`, `V*(1+gamma_v[k](r_t))`,
+per stream, gammas zero-init.
 
 Calibration term (§P5-T4): `logit = raw_logit * sigmoid(conf_scale(r_mean))`.
 
@@ -147,7 +149,8 @@ class DetectRequest(BaseModel):
 class DetectResponse(BaseModel):
     prediction: str                 # "real" | "fake"
     confidence: float               # calibrated probability [0, 1]
-    reliability: dict[str, float]   # {"spatial": 0.92, "temporal": 0.87, "frequency": 0.78}
+    reliability: dict[str, float]   # mean 4-D descriptor: {"blockiness", "hf_ratio", "entropy", "blur"}
+    stream_trust: dict[str, float]  # per-stream trust (C-21 definition): {"spatial", "frequency", "temporal"}
     n_frames_analyzed: int
     model_version: str
     processing_time_ms: float

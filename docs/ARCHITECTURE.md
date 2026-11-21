@@ -93,13 +93,13 @@ flowchart TB
 ### The Core Mechanism (P5-T3)
 
 ```
-Δ_t = softplus(W_Δ x_t + b_Δ + W_rel r_t)
+Δ_t = softplus(W_Δ x_t + b_Δ + W_rel[k] r_t)
 
 Where:
 - W_Δ, b_Δ: standard Mamba selection projection
-- W_rel:    Linear(4, d_model), zero-initialized (invariant 7)
-- r_t:      4-D reliability descriptor of the stream token t belongs to
-B and C are also FiLM-conditioned: B_t = B_t · (1 + γ_B(r_t)), γ_B zero-init.
+- W_rel[k]: Linear(4, d_model), one per stream k, zero-initialized (invariant 7)
+- r_t:      4-D reliability descriptor of the frame token t comes from (shared by its 3 tokens)
+B and C are also FiLM-conditioned per stream: B_t = B_t · (1 + γ_B[k](r_t)), γ_B[k] zero-init.
 ```
 
 **Why Δ?** In selective SSMs, Δ controls how much each input token writes to hidden state.
@@ -149,7 +149,7 @@ sequenceDiagram
     API->>P: Extract & crop 32 frames
     P->>M: Frames → backbone → tokens + reliability
     M->>M: Selective fusion (Δ-conditioned)
-    M->>R: {prediction, confidence, per_stream_reliability}
+    M->>R: {prediction, confidence, reliability, stream_trust}
     R->>API: JSON response + optional visualization
 ```
 

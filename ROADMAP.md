@@ -573,7 +573,7 @@ depends on it.**
 ### `P5-T3` — Reliability-conditioned fusion
 
 The hinge. Condition the SSM's selection parameter **Δ** (and the B/C projections) on the estimated
-per-stream reliability descriptor, over an interleaved multi-stream token sequence. Δ governs how
+frame-level reliability descriptor — with a learned, per-stream response to it — over an interleaved multi-stream token sequence. Δ governs how
 strongly the current token writes into state, so it is the natural home for "trust this stream less,
 right now" — which is why gating and sequence modelling are one mechanism here, not two stacked
 contributions.
@@ -598,11 +598,14 @@ week ~14, not at review.
 > Save the per-video values with more columns than the current plot uses, and it stays re-plottable
 > after the checkpoint is gone.
 
-> **CAPTURE C-21** `[AUTO]` — a per-stream reliability heatmap across datasets, showing which
-> evidence the model learns to distrust where. Highly interpretable, and it is the figure that makes
+> **CAPTURE C-21** `[AUTO]` — a per-stream trust heatmap across datasets, showing which
+> evidence the model learns to distrust where. Per-stream **trust** = mean over that stream's tokens
+> of `Δ_conditioned / Δ_unconditioned` (the same Δ with the `W_rel[k]` term removed); below 1 means
+> the stream is being written into state less than it would be without conditioning. The 4-D
+> descriptor itself is per frame and shared by all streams, so it cannot show this on its own. Highly interpretable, and it is the figure that makes
 > the contribution feel real rather than mechanical.
 > **Files:** `C-21_reliability_heatmap.png` + `.pdf` + `_data.csv` (dataset × stream × mean
-> reliability × std × n_videos). Print the cell values inside the cells — a heatmap without numbers
+> trust × std × n_videos, plus the mean 4-D descriptor per dataset). Print the cell values inside the cells — a heatmap without numbers
 > is unreadable in greyscale print, and some reviewers still print. `C-21_reliability_heatmap.md`.
 
 ### `P5-T4` — Stream-specific pseudo-fakes and calibration
@@ -698,10 +701,10 @@ flat. If it drops there, the estimator is tracking image statistics rather than 
 > **CAPTURE C-27** `[HUMAN-IN-LOOP]` — qualitative comparison: cases the baseline fails and your
 > model gets right, **with the reliability values shown**, so the figure explains *why*.
 > **Files:** `C-27_qualitative_wins.png` + `.pdf` (per case: the crop, both models' predicted
-> probabilities, the true label, and the per-stream reliability values printed as a small bar beside
-> the crop), `C-27_qualitative_wins/` (full frame sequences for the chosen cases),
+> probabilities, the true label, the 4-D reliability descriptor and the per-stream trust values printed as small bars
+> beside the crop), `C-27_qualitative_wins/` (full frame sequences for the chosen cases),
 > `C-27_qualitative_wins.csv` (video ID, dataset, CRF if known, true label, baseline prob, ours prob,
-> per-stream reliability), `C-27_qualitative_wins.md`.
+> 4-D descriptor, per-stream trust), `C-27_qualitative_wins.md`.
 >
 > **Pick these cases by hand from a script-generated shortlist.** Have the script rank every video
 > where the baseline is confidently wrong and your model confidently right; then choose the handful
