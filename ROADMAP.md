@@ -149,27 +149,39 @@ passthrough; (3) pure-PyTorch associative-scan SSM (always works, slower, no com
 
 ### Gate 0-B — Citation verification
 
-`P0-T2`. **RESOLVED (September 2026).** All six arXiv IDs verified as real papers.
+`P0-T2`. **PARTIALLY VERIFIED (September 2026).** All five arXiv IDs confirmed as real papers.
+Two author attributions corrected. Aletheia overlap question **still open** pending full PDF.
 
-Verified IDs:
-- `2604.16486` — **PhyLAA-X / Aletheia** (Ghori, April 2026) ✅
-- `2605.04405` — **HAAD** (Miyachi, May 2026) ✅
-- `2605.00630` — **CMTA** (Hwang et al., May 2026) ✅
-- `2607.13234` — **BMF / BitMind Forensics** (Miyachi & Uys, July 2026) ✅
-- `2607.17441` — **MSCA-FFT** (Kirui et al., July 2026) ✅
-- `github.com/devghori1264/Aletheia` — verified, open-source repo ✅
+**C-02 has NOT been produced yet.** `paper_assets/` does not exist. Gate 0-B remains open
+until C-02 is properly generated via P0-T4 infrastructure and the user confirms each verdict.
 
-**Aletheia fusion mechanism — answered:**
-Aletheia uses **predictive entropy + physics-resonance agreement** (output-side, prediction-
-confidence-based). It does NOT estimate input degradation. Decision: **No conflict. Cite as
-related work. Proceed unchanged.**
+Verified IDs (arXiv pages fetched, titles match):
 
-| Axis | Aletheia | Ours |
-|---|---|---|
-| Signal source | Prediction variance (post-inference) | Physical degradation descriptors (pre-fusion) |
-| Where it acts | Ensemble output weighting | SSM selection parameter Δ (per-token) |
-| Training signal | Requires ensemble outputs | Self-supervised from CRF sweep |
-| Granularity | Per-model | Per-stream, per-frame, per-token |
+| arXiv ID | Title Match | Authors (ACTUAL) | Notes |
+|---|---|---|---|
+| `2604.16486` | ✅ PhyLAA-X / Aletheia | Devendra Ghori, 13 Apr 2026 | ✅ Correct |
+| `2605.04405` | ✅ Detecting Deepfakes via Hamiltonian Dynamics | Harry Cheng, Ming-Hui Liu, Tianyi Wang, Weili Guan, Liqiang Nie, Mohan Kankanhalli, 6 May 2026 | ⚠️ **NOT Miyachi** — Miyachi is `2607.13234` |
+| `2605.00630` | ✅ CMTA | Hang Wang, Chao Shen, Chenhao Lin, Minghui Yang, Lei Zhang, Cong Wang, 1 May 2026 | ⚠️ **NOT Hwang** — first author is Hang Wang |
+| `2607.13234` | ✅ BMF / BitMind Forensics | Ken Jon Miyachi, Dylan Uys, 14 Jul 2026 | ✅ Correct |
+| `2607.17441` | ✅ MSCA-FFT | Pamela Kirui, Cho Hyuk, Qingzhong Liu, Haodi Jiang, 19 Jul 2026 | ✅ Correct. ⚠️ Image-level, not video |
+
+**Aletheia fusion mechanism — OPEN, needs full PDF:**
+The abstract describes TWO mechanisms: (1) three physics feature volumes (optical-flow curl,
+specular-reflectance skewness, rPPG power spectra) fed "directly into LAA-X attention via
+cross-attention gating" — this IS input-derived conditioning of an attention mechanism, and
+is closer to our approach than initially assessed; (2) "uncertainty-aware adaptive weighting"
+for a three-branch ensemble — this is prediction-confidence-based.
+
+Settling this requires the full PDF or the code, not just the abstract. Until then:
+- **Do not claim "No conflict" in any document**
+- **Do not adopt 0.966 DFDC AUC as the bar to beat** (see §3.1 note below)
+- The thesis remains distinct (SSM Δ-conditioning on self-supervised degradation descriptors
+  is not cross-attention gating on physics feature volumes), but the differentiation table
+  cannot be finalized until the full mechanism is understood
+
+Aletheia repo note: `github.com/devghori1264/Aletheia` (3 stars, 4 commits, 29 open PRs)
+describes a Django/NLP system for "audio-linguistic misalignments" — not the optical-flow-curl
+/ specular / rPPG architecture in the paper. Cite cautiously.
 
 > **CAPTURE C-02** `[HUMAN-IN-LOOP]` — a table of every cited work with arXiv ID / DOI, verified
 > yes/no, date checked, and the venue if published. **This file is the bibliography's source of
@@ -831,7 +843,7 @@ terminal cannot be searched.
 | Risk | Likelihood | Mitigation |
 |---|---|---|
 | `mamba-ssm` won't build on sm_120 | Medium-high | FiLM cross-attention fallback, thesis unchanged (Gate 0-A) |
-| ~~Aletheia's weighting overlaps the hinge~~ | **Resolved** | Gate 0-B passed — Aletheia uses prediction-confidence (predictive entropy + physics-resonance), not degradation-estimation. No overlap with our mechanism. |
+| Aletheia's weighting overlaps the hinge | **Open** | Gate 0-B partially verified — IDs are real, but Aletheia has TWO mechanisms (one input-derived). Needs full PDF. Thesis likely distinct but differentiation table not finalized. |
 | Reliability estimator won't correlate with CRF | Medium | Gate at `P5-T2`, before anything depends on it |
 | Conditioning gives no gain over static gating | Medium | Gate at `P5-T3`; oracle-gate ablation quantifies available headroom |
 | DFDC download/processing overruns | Medium | Part-loop validated on part 00; DFDCP unblocks development meanwhile |
