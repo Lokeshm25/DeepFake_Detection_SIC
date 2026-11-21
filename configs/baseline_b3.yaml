@@ -1,35 +1,34 @@
-# configs/baseline_b3.yaml — P4-T1/T2 baseline retrain
-# This is a STUB — values to be finalized during Phase 4.
+# configs/baseline_b3.yaml — P4-T1/T2/T4 baseline retrain on clean FF++ splits
+# Training keys match IMPLEMENTATION.md §P4-T1. Architecture = legacy capstone, UNCHANGED, so this
+# run isolates the protocol fix from any architecture change.
 
-model:
-  backbone: efficientnet_b3
-  pretrained: true
-  head_hidden: 512
-  dropout: 0.4
-  input_size: 224                  # native 300 addressed in P4-T2
-
-temporal:
-  type: bilstm
+backbone: efficientnet_b3
+pretrained: true
+img_size: 300                 # B3 native; P4-T2 also runs 224 for the comparison
+head_hidden: 512              # legacy SpatialHead (src/ground_truth/models.py)
+dropout: 0.4
+temporal:                     # legacy TemporalModel: Bi-LSTM + AttentionPool
   hidden_dim: 512
   n_layers: 2
   bidirectional: true
   dropout: 0.3
+frames_per_video: 32
 
-training:
-  dataset: ffpp_c23
-  epochs: 25
-  batch_size: 32
-  optimizer: adamw
-  lr: 1.0e-4
-  weight_decay: 1.0e-4
-  scheduler: cosine
-  warmup_epochs: 2
-  amp: false                       # blocked by -1e9 fp16 bug until P1-T3 fixes it
-  seed: 42                         # also run with 1337, 2024 for variance
-  frames_per_video: 32
+dataset: ffpp_c23             # invariant 1
+batch_size: 24
+amp: true                     # enabled by the P1-T3 fix
+epochs: 30
+optimizer: adamw
+lr: 1.0e-4
+weight_decay: 1.0e-2
+scheduler: cosine
+warmup_epochs: 2
+label_smoothing: 0.05
+early_stop_patience: 7        # on FF++ val only — invariant 2
+seeds: [42, 1337, 2024]       # invariant 6
 
 evaluation:
-  threshold_source: val            # NEVER from test set — invariant 2
-  metrics: [auc, ap, eer, accuracy]
-  bootstrap_over: videos           # NEVER frames — invariant 8
-  bootstrap_n: 2000
+  threshold_source: ffpp_val  # NEVER from a test set — invariant 2
+  metrics: [auc, ap, eer, acc]
+  bootstrap_over: videos      # NEVER frames — invariant 8
+  bootstrap_n: 1000           # bootstrap_auc default, IMPLEMENTATION.md §P4

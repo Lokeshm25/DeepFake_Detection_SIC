@@ -13,7 +13,7 @@ fusion — the paper's core contribution.
 ```mermaid
 flowchart LR
     subgraph Preprocessing
-        V[Raw Videos] --> FD[Face Crop<br/>MTCNN]
+        V["Third-party pre-cropped<br/>face videos"] --> FD["Frame sampling<br/>(no face detection;<br/>face_crop.py is dead code)"]
         FD --> F[Frames<br/>8 per video]
     end
 
@@ -39,6 +39,7 @@ flowchart LR
 **Known Issues** (see `RESEARCH_ANALYSIS.md` §1.2):
 - 905 Celeb-DF videos in training data (data leakage)
 - 8 frames per video (insufficient for temporal claims)
+- No face detection of its own — relied on third-party crops
 - EfficientNet-B3 at 224px (native is 300)
 - No frequency stream
 - LogisticRegression fusion (no learned dynamics)
@@ -50,14 +51,14 @@ flowchart LR
 ```mermaid
 flowchart TB
     subgraph Input
-        V[Raw Video] --> FD["Face Detector<br/>(RetinaFace)"]
-        FD --> FRAMES["32 Frames<br/>face-cropped"]
+        V[Raw Video] --> FD["Face Detector<br/>(chosen in P3-T1 bake-off)"]
+        FD --> FRAMES["32 Frames<br/>320px square crops"]
     end
 
-    subgraph "Backbone (Frozen CLIP ViT-B/16 + Adapters)"
-        FRAMES --> S_BB["Spatial Adapter"]
-        FRAMES --> T_BB["Temporal Adapter"]
-        FRAMES --> F_BB["Frequency Adapter<br/>(DCT/FFT input)"]
+    subgraph "Stream Encoders (P5-T1, P5-T3)"
+        FRAMES --> S_BB["Spatial<br/>frozen CLIP ViT-B/16 + adapters"]
+        FRAMES --> T_BB["Temporal<br/>frame-difference features"]
+        FRAMES --> F_BB["Frequency<br/>DCT/FFT map → small CNN"]
     end
 
     subgraph "Stream-Specific SBI Training"
@@ -68,11 +69,11 @@ flowchart TB
 
     subgraph "Reliability Estimation (P5-T2)"
         FRAMES --> RE["Reliability Estimator<br/>blockiness, HF ratio,<br/>entropy, blur"]
-        RE --> R["r ∈ R³<br/>per-stream reliability"]
+        RE --> R["r ∈ [0,1]⁴ per frame<br/>(higher = more reliable)"]
     end
 
     subgraph "Token Construction"
-        S_BB --> |"s₁...s₃₂"| TOK["Interleaved Tokens<br/>[s₁,t₁,f₁, s₂,t₂,f₂, ...]"]
+        S_BB --> |"s₁...s₃₂"| TOK["Interleaved Tokens (length 96)<br/>[s₁,f₁,m₁, s₂,f₂,m₂, ...]"]
         T_BB --> |"t₁...t₃₂"| TOK
         F_BB --> |"f₁...f₃₂"| TOK
     end
@@ -92,12 +93,13 @@ flowchart TB
 ### The Core Mechanism (P5-T3)
 
 ```
-Δ_conditioned = Δ_base + W_rel · r_stream
+Δ_t = softplus(W_Δ x_t + b_Δ + W_rel r_t)
 
 Where:
-- Δ_base:   learned base selection rate
-- W_rel:    zero-initialized weight (invariant 7)
-- r_stream: reliability score for this token's stream
+- W_Δ, b_Δ: standard Mamba selection projection
+- W_rel:    Linear(4, d_model), zero-initialized (invariant 7)
+- r_t:      4-D reliability descriptor of the stream token t belongs to
+B and C are also FiLM-conditioned: B_t = B_t · (1 + γ_B(r_t)), γ_B zero-init.
 ```
 
 **Why Δ?** In selective SSMs, Δ controls how much each input token writes to hidden state.
@@ -157,7 +159,7 @@ sequenceDiagram
 
 ```mermaid
 graph TD
-    CFG["configs/*.yaml"] --> PP["src/process_data/<br/>preprocessing"]
+    CFG["configs/*.yaml"] --> PP["src/data/<br/>detectors, preprocess, splits"]
     CFG --> TR["src/models/<br/>training"]
     CFG --> EV["src/eval/<br/>evaluation"]
 
@@ -166,10 +168,10 @@ graph TD
     EV --> |"paper_assets/"| PA["Captures C-01..C-29"]
 
     subgraph "src/models/"
-        BB["backbone.py<br/>CLIP + adapters"]
+        BB["backbones.py<br/>CLIP + adapters"]
         RE["reliability.py<br/>estimator"]
-        FU["fusion.py<br/>SSM + conditioning"]
-        HD["head.py<br/>classification"]
+        FU["fusion_ssm.py / fusion_attn.py<br/>SSM + conditioning"]
+        HD["heads.py<br/>classification"]
     end
 
     BB --> FU
@@ -193,5 +195,6 @@ graph TD
 ## Config Inheritance
 
 All configs live in `configs/` as flat YAML files. No inheritance chain — each config is
-self-contained for its phase. The `operator` key in `fusion_ssm.yaml` is the only value
+self-contained for its phase, except that `fusion_ssm.yaml` names the `backbone_clip.yaml` and
+`reliability.yaml` it uses. The `operator` key in `fusion_ssm.yaml` is the only value
 that is written by one task (P0-T1) and read by many.

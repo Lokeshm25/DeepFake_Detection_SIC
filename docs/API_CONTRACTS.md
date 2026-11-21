@@ -2,207 +2,134 @@
 
 ## Purpose
 
-This document defines the data contracts between all pipeline stages. Every function signature,
-config schema, and data format is specified here so modules can be developed independently.
+Data contracts between pipeline stages, so modules can be developed independently.
+**`IMPLEMENTATION.md` is the source of truth.** This file summarises its signatures; if the two
+ever disagree, `IMPLEMENTATION.md` wins and this file is the one to fix.
 
 ---
 
-## 1. Preprocessing Pipeline (`src/process_data/`)
+## 1. Preprocessing (`src/data/`) — §P3-T1, §P3-T3, §P3-T4
 
-### `extract_and_crop(config: PreprocessConfig) -> CropManifest`
+`src/process_data/` is the **legacy** pipeline and is not rebuilt (`CLAUDE.md`).
 
 ```python
-@dataclass
-class PreprocessConfig:
-    dataset_root: Path
-    output_root: Path
-    splits_dir: Path
-    face_detector: str              # "retinaface" | "mtcnn" | "s3fd"
-    crop_margin: float              # default 1.3
-    output_size: tuple[int, int]    # (224, 224) or (300, 300)
-    frames_per_video: int           # 32
-
-@dataclass
-class CropManifest:
-    """Written to data/crops/crop_manifest.csv — one row per frame."""
-    video_id: str
-    dataset: str
-    split: str                      # train | val | test
-    frame_idx: int
-    crop_path: Path
-    bbox: tuple[int, int, int, int] # x1, y1, x2, y2
-    detection_confidence: float
-    identity_cluster: int           # for identity-disjoint splits
+# src/data/preprocess.py
+def extract_crops(video_path: Path, out_dir: Path, cfg: PreprocessConfig) -> CropManifest:
+    """32 uniformly spaced frames -> highest-confidence face box -> square crop
+    (max(w,h) * crop_margin) -> resize to crop_size -> {out_dir}/{idx:03d}.png.
+    Writes {out_dir}/manifest.json: per-frame box, confidence, substitution flag."""
 ```
 
-### Split Files (`data/splits/`)
+`PreprocessConfig` mirrors `configs/preprocess.yaml`: `detector` (null until P3-T1 — must raise),
+`frames_per_video=32`, `sampling`, `crop_size=320`, `crop_margin=1.3`, `output_format`,
+`png_compress_level`, `min_face_size`, `max_workers`, `on_missing_face`.
 
-```
-# Format: one line per video
-# Fields: video_id, label (0=real, 1=fake), dataset, identity_cluster
-000,1,ffpp_c23,42
-001_870,0,ffpp_c23,87
-...
+```python
+# src/data/splits.py
+def parse_identity(video_path: Path, dataset: str) -> str | frozenset[str]: ...
+def build_splits(ff_root: Path, ratios=(0.7, 0.15, 0.15), seed=42) -> dict:
+    """Connected components of the identity co-occurrence graph -> whole components to splits."""
 ```
 
-**Invariant:** `train.txt`, `val.txt`, `test.txt` are identity-disjoint and contain ONLY FF++.
-Other dataset files (e.g., `cdf2.txt`) are eval-only and never overlap.
+**Split files** (`data/splits/`): `train.txt`, `val.txt`, `test_<dataset>.txt`. Relative paths from
+the repo root, forward slashes. `train.txt`/`val.txt` contain ONLY FF++ (invariant 1); enforced by
+`python -m tools.verify_splits --splits data/splits --config configs/preprocess.yaml`.
 
 ---
 
-## 2. Backbone + Adapters (`src/models/backbone.py`)
-
-### `BackboneWithAdapters`
+## 2. Backbone + adapters (`src/models/backbones.py`) — §P5-T1
 
 ```python
-class BackboneWithAdapters(nn.Module):
-    """Frozen CLIP ViT-B/16 with stream-specific bottleneck adapters."""
-
-    def __init__(self, config: BackboneConfig):
+class FrozenBackboneWithAdapters(nn.Module):
+    def __init__(self, name="clip_vit_b16", adapter_dim_ratio=8, n_frames=32): ...
+    def forward(self, x):  # x: (B, T, 3, H, W) -> (B, T, D) per-frame tokens
         ...
-
-    def forward(self, frames: Tensor) -> dict[str, Tensor]:
-        """
-        Args:
-            frames: [B, T, C, H, W] — B batches of T frames
-
-        Returns:
-            dict with keys 'spatial', 'temporal', 'frequency'
-            each value: [B, T, D] where D is the adapter output dim
-        """
 ```
-
-```python
-@dataclass
-class BackboneConfig:
-    model_name: str                 # "clip_vit_b16"
-    freeze_backbone: bool           # True
-    adapter_bottleneck_dim: int     # 64
-    adapter_init: str               # "zero"
-    output_dim: int                 # 256 (projected)
-```
+Adapter after each block: `h = h + up(gelu(down(ln(h))))`, `down: D->D/8`, `up` **zero-init**.
+Config: `configs/backbone_clip.yaml`. This is the **spatial** stream only — the frequency and
+temporal streams have their own encoders (§4).
 
 ---
 
-## 3. Reliability Estimator (`src/models/reliability.py`)
-
-### `ReliabilityEstimator`
+## 3. Reliability estimator (`src/models/reliability.py`) — §P5-T2
 
 ```python
 class ReliabilityEstimator(nn.Module):
-    """Estimates per-stream evidence reliability from frame-level features."""
-
-    def forward(self, frames: Tensor) -> Tensor:
-        """
-        Args:
-            frames: [B, T, C, H, W]
-
-        Returns:
-            reliability: [B, 3] — one scalar per stream (spatial, temporal, frequency)
-            Each value in [0, 1] via sigmoid.
-        """
+    """<1M params. Input crop downsampled 320 -> 160.
+    Output r in [0,1]^4 PER FRAME: [blockiness, hf_ratio, entropy, blur].
+    HIGHER = MORE RELIABLE."""
 ```
+- **Targets:** the four statistics computed analytically on degraded crops (not CRF labels).
+- **Loss:** MSE on the 4-D descriptor. 20 epochs, AdamW, lr 3e-4, batch 128.
+- **Gate:** Spearman ρ between predicted `r[0]` and true CRF on held-out videos, |ρ| > 0.8,
+  sign negative.
 
-**Training contract:**
-- Input: frames at known CRF levels (self-supervised labels)
-- Loss: MSE between predicted reliability and 1 - normalized_crf
-- Gate (P5-T2): Spearman correlation with CRF must be > 0.7
+Config: `configs/reliability.yaml`.
 
 ---
 
-## 4. Selective Fusion (`src/models/fusion.py`)
+## 4. Selective fusion (`src/models/fusion_ssm.py`, `fusion_attn.py`) — §P5-T3
 
-### `ReliabilityConditionedFusion`
-
-```python
-class ReliabilityConditionedFusion(nn.Module):
-    """
-    The paper's core mechanism.
-    Interleaves stream tokens and processes through a selective SSM
-    whose Δ parameter is modulated by reliability estimates.
-    """
-
-    def __init__(self, config: FusionConfig):
-        ...
-
-    def forward(
-        self,
-        stream_tokens: dict[str, Tensor],  # {stream: [B, T, D]}
-        reliability: Tensor,                # [B, 3]
-    ) -> Tensor:
-        """
-        Returns:
-            logits: [B] — raw logits before calibration scaling
-        """
-```
+Tokens per frame t: spatial `s_t`, frequency `f_t` (DCT/FFT map -> small CNN), temporal `m_t`
+(frame difference / flow), each in R^D. Interleaved `[s_1, f_1, m_1, ..., s_32, f_32, m_32]`
+(length 96) + stream-type and temporal position embeddings.
 
 ```python
-@dataclass
-class FusionConfig:
-    operator: str                   # "mamba_cuda" | "mamba_torch" | "film_attn"
-    gate: str                       # "none" | "static" | "conditioned" | "oracle"
-    d_model: int                    # 256
-    d_state: int                    # 16
-    d_conv: int                     # 4
-    expand: int                     # 2
-    token_interleave: bool          # True
-    w_rel_init: str                 # "zero" — invariant 7
+class ReliabilityConditionedSSM(nn.Module):
+    def __init__(self, d_model, d_state=16, rel_dim=4, operator="mamba_cuda"):
+        """delta_t = softplus(W_delta(x_t) + b_delta + W_rel(r_t)), W_rel zero-init.
+        B_t = B_t * (1 + gamma_B(r_t)), gamma_B zero-init (likewise C)."""
 ```
+Fallback `operator: film_attn`: cross-attention with `K*(1+gamma_k(r))`, `V*(1+gamma_v(r))`,
+gammas zero-init.
 
-**Key contract for ablations:**
-- `gate="none"`: W_rel is zeroed → model is EXACTLY the unconditioned model at init
-- `gate="static"`: learned per-stream weight, shared across inputs
-- `gate="conditioned"`: full mechanism (reliability modulates Δ)
-- `gate="oracle"`: substitutes true CRF for estimated reliability (compression sweep only)
+Calibration term (§P5-T4): `logit = raw_logit * sigmoid(conf_scale(r_mean))`.
+
+**Ablation contract** (`configs/fusion_ssm.yaml` `ablation:` block, §P6-T4):
+- `gate: none` — exact nested model of `conditioned` because every conditioning parameter is
+  zero-init (invariant 7); guarded by `test_zero_init_conditioning`
+- `gate: static` — one learned weight per stream, shared across inputs
+- `gate: conditioned` — full mechanism
+- `gate: oracle` — reliability computed analytically from the known applied degradation
+  (compression sweep only)
 
 ---
 
-## 5. Evaluation (`src/eval/`)
-
-### `evaluate_model(ckpt, split_file, cfg, transform) -> DataFrame`
+## 5. Evaluation and outputs (`src/eval/`) — §P0-T5, §P0-T6, §P6-T1
 
 ```python
-def evaluate_model(
-    ckpt: Path,
-    split_file: Path,
-    cfg: EvalConfig,
-    transform: Callable | None = None,
-) -> pd.DataFrame:
-    """
-    Score every video in split_file.
-
-    Returns one row per VIDEO:
-        video_id, dataset, true_label, pred_prob, n_frames_scored
-
-    Video-level probability = MEAN over 32 frame probabilities.
-    """
+def evaluate_model(ckpt: Path, split_file: Path, cfg: EvalConfig,
+                   transform: Callable | None = None) -> pd.DataFrame:
+    """One row per VIDEO: video_id, dataset, true_label, pred_prob, n_frames_scored.
+    Video probability = MEAN of the 32 frame probabilities."""
 ```
-
-### `save_figure(fig, name, data, note) -> None`
+Every eval run also writes `paper_assets/per_video_scores/<model>_<test_set>_seed<n>.csv`
+(`video_id,dataset,true_label,pred_prob`) — invariant 5b.
 
 ```python
-def save_figure(
-    fig: matplotlib.figure.Figure,
-    name: str,                      # e.g., "C-24_compression_sweep"
-    data: pd.DataFrame,             # the _data.csv content
-    note: str,                      # 2-3 sentence interpretation
-    base_dir: Path = Path("paper_assets/"),
-) -> None:
-    """
-    Saves FOUR files (invariant):
-    - {name}.png (300 dpi)
-    - {name}.pdf (vector)
-    - {name}_data.csv
-    - {name}.md (the note)
-    """
+# src/eval/figures.py — the only way figures/tables are written
+def save_figure(fig, capture_id: str, name: str, data: pd.DataFrame,
+                caption: str, assets: Path = Path("paper_assets")) -> None:
+    """{capture_id}_{name}.png (300 dpi), .pdf, _data.csv, .md"""
+def save_table(df, capture_id: str, name: str, caption: str, tex: bool = False) -> None: ...
+def save_console(text: str, capture_id: str, name: str, caption: str) -> None: ...
+def write_pending_stub(capture_id: str, name: str, what_to_capture: str) -> None: ...
 ```
 
-### Results Log Schema (`paper_assets/results_log.csv`)
+```python
+# src/eval/metrics.py
+def log_result(task_id: str, model_name: str, config_path: str, train_set: str,
+               test_set: str, seed: int, metrics: dict, n_videos: int, notes: str = "") -> None: ...
+def bootstrap_auc(y_true, y_score, n_boot=1000, seed=42) -> tuple[float, float, float]: ...
+```
+
+### Results log schema (`paper_assets/results_log.csv`) — the only schema
 
 ```
-task_id,model,test_set,seed,metric,value,ci_low,ci_high,git_commit,timestamp,notes
-P4-T1,baseline_b3,ffpp_c23,42,auc,0.9712,0.9651,0.9773,abc1234,2026-09-20T10:30:00,honest baseline
+timestamp,git_commit,task_id,model_name,config_path,train_set,test_set,seed,auc,auc_ci_low,auc_ci_high,ap,eer,acc,ece,mce,brier,n_videos,notes
 ```
+`git_commit` gets a `-dirty` suffix on an uncommitted tree. Missing metrics are empty strings,
+never 0.0.
 
 ---
 

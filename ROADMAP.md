@@ -174,7 +174,7 @@ for a three-branch ensemble — this is prediction-confidence-based.
 
 Settling this requires the full PDF or the code, not just the abstract. Until then:
 - **Do not claim "No conflict" in any document**
-- **Do not adopt 0.966 DFDC AUC as the bar to beat** (see §3.1 note below)
+- **Do not adopt 0.966 DFDC AUC as the bar to beat** (see `RESEARCH_ANALYSIS.md` §3.1)
 - The thesis remains distinct (SSM Δ-conditioning on self-supervised degradation descriptors
   is not cross-attention gating on physics feature volumes), but the differentiation table
   cannot be finalized until the full mechanism is understood

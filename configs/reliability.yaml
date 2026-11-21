@@ -1,0 +1,26 @@
+# configs/reliability.yaml — P5-T2 reliability estimator
+# STUB — values from IMPLEMENTATION.md §P5-T2, finalised during Phase 5.
+
+descriptor: [blockiness, hf_ratio, entropy, blur]  # 4-D, HIGHER = MORE RELIABLE, each in [0,1]
+targets: analytic                  # closed-form stats on the degraded crop; the CNN predicts them
+input_size: 160                    # 320 crops downsampled 2x
+channels: [16, 32, 64, 128]        # 4 conv blocks, stride 2, BN, GELU -> GAP -> Linear(128,4) -> sigmoid
+
+degradations:
+  crf: [18, 23, 28, 32, 36, 40, 44]     # via src/process_data/augmentations.py — do not rewrite
+  rescale: [0.5, 0.75]                  # downscale-then-upscale
+  blur_sigma: [0.5, 2.0]
+  jpeg_quality: [40, 95]
+  noise_sigma: [2, 10]
+
+training:
+  loss: mse
+  epochs: 20
+  optimizer: adamw
+  lr: 3.0e-4
+  batch_size: 128
+
+gate:                              # falsifiable; do not proceed past it
+  metric: spearman_r0_vs_crf       # predicted blockiness vs true CRF, held-out videos
+  min_abs_rho: 0.8
+  sign: negative

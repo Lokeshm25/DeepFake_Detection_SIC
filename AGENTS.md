@@ -110,7 +110,8 @@ Summary: When an agent encounters a `[MANUAL]` or `[HUMAN-IN-LOOP]` capture, it 
 | Directory | Owner | Notes |
 |---|---|---|
 | `src/ground_truth/` | Legacy — do not modify except as specified in P1-T3 |  |
-| `src/process_data/` | Research Agent — rebuilt in P3 |  |
+| `src/process_data/` | Legacy — do not modify except as specified in P1-T3; `augmentations.py` is reused, never rewritten |  |
+| `src/data/` | Research Agent — new in P3 (detectors, preprocess, splits, datasets) |  |
 | `src/eval/` | Research Agent — new in P0-T6 |  |
 | `src/models/` | Research Agent — new in P5 |  |
 | `configs/` | Shared — stubs created, values filled per phase |  |
@@ -128,7 +129,9 @@ Summary: When an agent encounters a `[MANUAL]` or `[HUMAN-IN-LOOP]` capture, it 
 configs/
 ├── preprocess.yaml      # P3 — face detection, cropping, frames
 ├── baseline_b3.yaml     # P4 — honest baseline retrain
-├── fusion_ssm.yaml      # P5 — THE core mechanism config
+├── backbone_clip.yaml   # P5-T1 — frozen backbone + adapters
+├── reliability.yaml     # P5-T2 — reliability estimator
+├── fusion_ssm.yaml      # P5-T3/T4 + P6-T4 ablations — THE core mechanism config
 ├── eval_matrix.yaml     # P6 — final evaluation matrix
 └── *.local.yaml         # git-ignored personal overrides
 ```

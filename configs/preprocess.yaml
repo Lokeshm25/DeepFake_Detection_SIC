@@ -1,25 +1,34 @@
 # configs/preprocess.yaml — P3-T3 preprocessing pipeline
-# This is a STUB — values to be finalized during Phase 3.
+# Keys below `detector` match IMPLEMENTATION.md §P3-T3 exactly. Finalised during Phase 3.
 
-dataset_root: data/raw/
-output_root: data/crops/
+detector: null                # REQUIRED — set from the P3-T1 result. Deliberately unset:
+                              # preprocess.py must raise if this is null. Shipping a default
+                              # here would let an agent skip the bake-off by accepting it.
+frames_per_video: 32          # research requirement, not a tunable (CLAUDE.md)
+sampling: uniform             # uniform over full duration
+crop_size: 320                # stored size; models resize (B3 at 300/224, CLIP at 224)
+crop_margin: 1.3              # multiplier on max(box_w, box_h) -> square crop
+output_format: png
+png_compress_level: 3         # 0-9; 3 balances size and write speed
+min_face_size: 64             # skip detections smaller than this (px)
+max_workers: 12               # 24-core CPU; leave headroom for the GPU feed
+on_missing_face: nearest      # nearest | skip | black
+
+# Paths — relative to repo root, forward slashes (CLAUDE.md conventions)
+raw_root: data/raw/
+crops_root: data/crops/
 splits_dir: data/splits/
 
-face_detector: retinaface          # retinaface | mtcnn | s3fd — settled in P3-T1
-crop_margin: 1.3                   # multiplicative margin around detection box
-output_size: [224, 224]            # will be 300 once backbone resolution addressed in P4-T2
-frames_per_video: 32               # upgraded from 8 in original pipeline
-
-# Datasets — roles fixed per CLAUDE.md invariant 1
+# Dataset roles — fixed by CLAUDE.md invariant 1. verify_splits reads these.
 datasets:
   ffpp_c23:
-    role: train                    # ONLY training dataset
+    role: train                    # the ONLY training dataset
     path: data/raw/FaceForensics/c23/
     methods: [Deepfakes, Face2Face, FaceSwap, NeuralTextures]
   ffpp_c40:
     role: eval
     path: data/raw/FaceForensics/c40/
-  celebdf_v2:
+  cdf2:
     role: eval                     # NEVER train
     path: data/raw/CelebDF-v2/
   dfdc:

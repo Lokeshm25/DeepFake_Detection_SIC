@@ -1,43 +1,29 @@
-# configs/fusion_ssm.yaml — P5-T3 reliability-conditioned selective fusion
-# This is a STUB — values to be finalized during Phase 5.
-# This is THE CORE CONFIG for the paper's mechanism.
+# configs/fusion_ssm.yaml — P5-T3/T4 reliability-conditioned selective fusion + P6-T4 ablations
+# STUB — values finalised during Phase 5. Spec: IMPLEMENTATION.md §P5-T3, §P5-T4, §P6-T4.
+# Backbone settings live in configs/backbone_clip.yaml, the estimator in configs/reliability.yaml.
 
-# Gate 0-A result — written by P0-T1
+# Gate 0-A result — written by P0-T1. The ONLY key that branches on the sm_120 build outcome.
 operator: mamba_cuda               # mamba_cuda | mamba_torch | film_attn
 
-# Backbone (P5-T1)
-backbone:
-  spatial: clip_vit_b16
-  temporal: clip_vit_b16
-  frequency: clip_vit_b16
-  freeze_backbone: true
-  adapter:
-    type: bottleneck               # bottleneck adapter per stream
-    bottleneck_dim: 64
-    init: zero                     # zero-init so frozen model = baseline at init
-
-# Reliability estimator (P5-T2)
-reliability:
-  input_features: [blockiness, hf_ratio, entropy, blur_score]
-  hidden_dim: 128
-  output_dim_per_stream: 1         # scalar reliability per stream
-  training: self_supervised        # from controlled CRF degradation
-  gate_monotonicity_test: true     # invariant: higher CRF → lower reliability
+backbone_config: configs/backbone_clip.yaml
+reliability_config: configs/reliability.yaml
 
 # Token construction (P5-T3)
 tokens:
-  streams: [spatial, temporal, frequency]
-  interleave: true                 # interleaved | separate
-  token_dim: 256                   # projected from backbone feat dim
-  sequence_length: 96              # 32 frames × 3 streams (interleaved)
+  streams: [spatial, frequency, temporal]   # order inside each timestep: [s_t, f_t, m_t]
+  frequency_encoder: dct_cnn       # DCT/FFT magnitude map -> small CNN -> R^D
+  temporal_encoder: frame_diff     # frame difference (or optical flow) features -> R^D
+  token_dim: 256
+  sequence_length: 96              # 32 frames x 3 streams, interleaved
+  stream_type_embedding: true      # learned 3-way embedding
+  temporal_position_embedding: true
 
-# The conditioning — the paper's core mechanism
+# Conditioning — the paper's core mechanism. Which gate is active is set by ablation.gate below.
 conditioning:
-  gate: conditioned                # none | static | conditioned | oracle
-  reliability_to_delta: true       # r → Δ modulation
-  conf_scale_init: zero            # invariant 7
-  film_gamma_init: zero            # invariant 7
+  rel_dim: 4                       # r_t in R^4 per stream (reliability.yaml)
   w_rel_init: zero                 # invariant 7
+  film_gamma_init: zero            # invariant 7 — gamma_B, gamma_C (and gamma_k/v for film_attn)
+  conf_scale_init: zero            # invariant 7
 
 # SSM parameters
 ssm:
@@ -48,18 +34,16 @@ ssm:
 
 # Calibration (P5-T4)
 calibration:
-  loss_weight_sweep: [0.0, 0.05, 0.1, 0.2]
+  lambda_sweep: [0.0, 0.05, 0.1, 0.2]
   metric: ece                      # gate: ECE improves under shift with no AUC regression
 
-# SBI (P5-T4)
-sbi:
-  mode: stream_specific            # shared | stream_specific
-  # Each stream sees its own SBI variant — non-redundant supervision
+# SBI (P5-T4) — set by ablation.sbi below
 
-# Ablation surface (P6-T4)
+# Ablation surface (P6-T4) — every ablation is a switch here, never a separate model file
 ablation:
   gate: conditioned                # none | static | conditioned | oracle
-  operator: mamba_cuda             # mamba_cuda | mamba_torch | film_attn | transformer
+  operator: null                   # null = use top-level `operator`; set `transformer` only for
+                                   # the SSM-vs-Transformer row
   tokens: interleaved              # interleaved | separate
   backbone: adapted                # frozen | adapted
   sbi: stream_specific             # shared | stream_specific
@@ -67,14 +51,14 @@ ablation:
 
 # Training
 training:
-  dataset: ffpp_c23
+  dataset: ffpp_c23                # invariant 1
   epochs: 30
   batch_size: 16                   # 12GB VRAM budget
+  gradient_accumulation: 2         # prefer this over fewer frames (CLAUDE.md)
   optimizer: adamw
   lr: 5.0e-5
   weight_decay: 1.0e-4
   scheduler: cosine
   warmup_epochs: 3
-  amp: true                        # -1e9 fix applied by P1-T3
-  seed: 42
-  gradient_accumulation: 2
+  amp: true                        # enabled by the P1-T3 mask fix
+  seeds: [42, 1337, 2024]          # invariant 6

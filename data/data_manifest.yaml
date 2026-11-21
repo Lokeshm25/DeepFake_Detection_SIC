@@ -1,0 +1,6 @@
+splits:
+  reserved: 200
+  test_internal: 314
+  train: 5000
+  val: 937
+total_videos: 6451

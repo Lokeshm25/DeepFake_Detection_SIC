@@ -194,17 +194,17 @@ because it passes `capture_check` with false content.
 
 ## Known defects and their status
 
-| Defect | Location | Status |
+| Defect | Location | Status (all still present in the code as of 2026-11-21) |
 |---|---|---|
-| Celeb-DF leaked into train/val/test | `split_dataset.ipynb:180` | Fixed in `P3-T4` |
-| `-1e9` mask overflows fp16, blocks AMP | `models.py:85` | Fixed in `P1-T3` |
-| `test_internal` fallback mislabels test set as "External" | `build_features.py:218`, `train_ensemble_final.py:50-54` | Fixed in `P1-T3` |
-| Hardcoded unsupported "99.2%" accuracy | `app.py:866` | Fixed in `P1-T3` |
-| Stale absolute OneDrive paths | `data/*.txt` | Fixed in `P3-T4` |
-| 8 frames per video (cannot support temporal claims) | `extract_frames.ipynb:34` | Fixed in `P3-T3` (→32) |
-| EfficientNet-B3 run at 224px, native is 300 | `models.py:31` | Addressed in `P4-T2` |
-| ffmpeg CRF helpers never called | `augmentations.py` | Used in `P6-T2` |
-| No face detection in pipeline; `face_crop.py` is dead code | `src/process_data/face_crop.py` | Replaced in `P3-T1`/`T3` |
+| Celeb-DF leaked into train/val/test | `split_dataset.ipynb:180` | Open — to be fixed in `P3-T4` |
+| `-1e9` mask overflows fp16, blocks AMP | `models.py:85` | Open — to be fixed in `P1-T3` |
+| `test_internal` fallback mislabels test set as "External" | `build_features.py:218`, `train_ensemble_final.py:50-54` | Open — to be fixed in `P1-T3` |
+| Hardcoded unsupported "99.2%" accuracy | `app.py:866` | Open — to be fixed in `P1-T3` |
+| Stale absolute OneDrive paths | `data/*.txt` | Open — to be fixed in `P3-T4` |
+| 8 frames per video (cannot support temporal claims) | `extract_frames.ipynb:34` | Open — to be fixed in `P3-T3` (→32) |
+| EfficientNet-B3 run at 224px, native is 300 | `models.py:31` | Open — to be addressed in `P4-T2` |
+| ffmpeg CRF helpers never called | `augmentations.py` | Open — to be used in `P6-T2` |
+| No face detection in pipeline; `face_crop.py` is dead code | `src/process_data/face_crop.py` | Open — to be replaced in `P3-T1`/`T3` |
 
 Do not quote `checkpoints/ensemble_final/results.txt` "Test (External) AUC: 0.9695" as an external
 result anywhere. It is the internal test set, mislabelled by the fallback above.

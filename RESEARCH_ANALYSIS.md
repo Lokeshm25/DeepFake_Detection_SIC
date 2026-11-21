@@ -183,17 +183,24 @@ reviewing a proposal and auditing a project.
   (Simulated/Target)"** — the 0.995/0.985/0.971 figures are invented. The surrounding prose
   presents them alongside real measurements without distinction.
 
-**RESOLVED (September 2026).** All six arXiv IDs have been verified as real papers via direct web
-search:
-- `2604.16486` — **Aletheia / PhyLAA-X** (Ghori): Physics-conditioned LAA. ✅ Real.
-- `2605.04405` — **HAAD** (Miyachi): Hamiltonian dynamics stability probe. ✅ Real.
-- `2605.00630` — **CMTA** (Hwang et al.): Cross-modal temporal artifacts. ✅ Real.
-- `2607.13234` — **BMF** (Miyachi & Uys, BitMind): Continually-updated detector. ✅ Real.
-- `2607.17441` — **MSCA-FFT** (Kirui et al.): FFT spatial-frequency fusion. ✅ Real.
+**PARTIALLY VERIFIED (September 2026) — Gate 0-B still open** (`ROADMAP.md` §Gate 0-B). The five
+arXiv IDs resolve to real papers with matching titles, but **C-02 has not been produced**, so under
+invariant 9 none of them is citable yet. Two author attributions in earlier drafts were wrong and
+are corrected here:
+- `2604.16486` — **Aletheia / PhyLAA-X** — Devendra Ghori, Apr 2026.
+- `2605.04405` — **HAAD**, *Detecting Deepfakes via Hamiltonian Dynamics* — Harry Cheng et al.,
+  May 2026. (**Not** Miyachi.)
+- `2605.00630` — **CMTA** — Hang Wang et al., May 2026. (**Not** Hwang.)
+- `2607.13234` — **BMF / BitMind Forensics** — Ken Jon Miyachi & Dylan Uys, Jul 2026.
+- `2607.17441` — **MSCA-FFT** — Pamela Kirui et al., Jul 2026. Image-level, not video.
 
-One substantive note: PhyLAA-X reports **90.8% AUC on DFDC** and **94.9% on Celeb-DF v2** (from the
-verified paper). The earlier "0.966 DFDC AUC" figure from the NotebookLM document appears to have
-been from a different evaluation protocol or misquoted. Use the verified figures when positioning.
+**On Aletheia's 0.966:** an earlier revision "corrected" this to 90.8% AUC. That correction was
+backwards — **0.966 is the reported DFDC AUC; 90.8% is accuracy.** The original flag stands: a
+0.966 cross-dataset DFDC AUC is far above the 0.70–0.85 range typical for FF++-trained detectors,
+and until the training protocol is confirmed from the full paper (in particular, whether DFDC or
+other eval data entered training), **do not adopt it as the bar to beat.** This project has
+already produced one such number, and it was leakage. Re-read every Aletheia figure from the PDF
+during C-02 rather than from secondary summaries.
 
 **Assessed real and safe to build against:** SBI (Shiohara & Yamasaki, CVPR 2022); LAA-Net
 (arXiv 2401.13856); CAST (arXiv 2506.21711 → *Knowledge-Based Systems*, 2026); FSBI; FreqBlender
@@ -521,15 +528,20 @@ mask fix, which re-enables AMP; the `test_internal` fallback that mislabels the 
 
 ## 8. Open items
 
-- ~~**Four arXiv IDs unverified**~~ → **RESOLVED (September 2026).** All six verified as real.
-- ~~**PhyLAA-X's 0.966 DFDC claim**~~ → **CLARIFIED.** Verified paper reports 90.8% DFDC AUC, 94.9%
-  CDF-v2 AUC. The 0.966 figure was likely misquoted by the NotebookLM document.
-- ~~**Aletheia overlap**~~ → **RESOLVED.** Uses prediction-confidence weighting (predictive entropy +
-  physics-resonance agreement), NOT degradation-estimation. No conflict with our mechanism. Cite as
-  related work. Differentiation: ours conditions on estimated *input* degradation inside the SSM Δ
-  parameter; Aletheia conditions on *output* prediction variance for ensemble weighting.
+- **arXiv IDs — partially verified.** All five exist with matching titles; two author attributions
+  corrected (§3.1). Not citable until C-02 is produced and the user confirms each verdict.
+- **PhyLAA-X's 0.966 DFDC AUC — open.** 0.966 is the AUC (90.8% is accuracy). Do not use it as the
+  bar to beat until the training protocol is confirmed from the full paper (§3.1).
+- **Aletheia overlap — open, needs the full PDF.** The abstract describes two mechanisms:
+  (1) physics feature volumes (optical-flow curl, specular skewness, rPPG spectra) fed into LAA-X
+  attention via cross-attention gating — input-derived conditioning, closer to ours than first
+  assessed; (2) uncertainty-aware ensemble weighting — prediction-confidence-based. The thesis is
+  likely still distinct (SSM Δ-conditioning on self-supervised degradation descriptors is not
+  cross-attention gating on physics volumes), but **do not claim "no conflict" anywhere** until the
+  mechanism is read from the paper or code. Note: `github.com/devghori1264/Aletheia` describes an
+  unrelated Django/NLP system — cite cautiously.
 - **DFDC download logistics** — part-loop validated on part 00 before committing to all 50.
-- **Detector choice** for preprocessing (RetinaFace vs MTCNN vs S3FD) — settle in phase 1 and hold
+- **Detector choice** for preprocessing (RetinaFace vs MTCNN vs S3FD) — settle in `P3-T1` and hold
   it fixed across every dataset.
 - **Crop-margin diagnostic** — measure your own 1.3× crops against the third-party crops on the
   same videos. If generalization improves from margin alone, that is worth a paragraph in the paper.

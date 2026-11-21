@@ -1,6 +1,10 @@
 data_raw/
 Dataset/
-data/
+data/*
+# Legacy capstone splits are tracked: they are the evidence of the 905-video Celeb-DF leak (P1-T2)
+!data/*.txt
+!data/*.json
+!data/*.yaml
 preprocessed/
 embeddings/
 checkpoints/

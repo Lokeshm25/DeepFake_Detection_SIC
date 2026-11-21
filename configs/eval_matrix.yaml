@@ -26,7 +26,7 @@ metrics:
   threshold_source: ffpp_val       # NEVER per test set — invariant 2
   bootstrap:
     over: videos                   # NEVER frames — invariant 8
-    n_resamples: 2000
+    n_resamples: 1000              # bootstrap_auc default, IMPLEMENTATION.md §P4
 
 output:
   base_dir: paper_assets/

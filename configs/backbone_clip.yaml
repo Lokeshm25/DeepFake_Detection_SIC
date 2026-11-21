@@ -1,0 +1,10 @@
+# configs/backbone_clip.yaml — P5-T1 frozen backbone + adapters
+# STUB — values from IMPLEMENTATION.md §P5-T1, finalised during Phase 5.
+
+name: clip_vit_b16                 # clip_vit_b16 | dinov2_vitb14
+freeze_backbone: true
+adapter_dim_ratio: 8               # down: D -> D/8, up: D/8 -> D, after each block
+adapter_up_init: zero              # invariant 7 — adapted model starts identical to frozen
+n_frames: 32
+img_size: 224                      # resized from the 320 stored crops
+embeddings_dir: embeddings/clip_vit_b16/   # cache valid only while adapters are frozen
