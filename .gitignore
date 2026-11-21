@@ -56,7 +56,9 @@ data/crops/
 data/splits/
 
 # Agent settings
-.claude/
+.claude/*
+# Project skills are shared research tooling and must be versioned; local settings stay ignored
+!.claude/skills/
 
 # Config overrides
 configs/*.local.yaml
