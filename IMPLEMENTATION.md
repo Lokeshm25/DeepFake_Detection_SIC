@@ -191,22 +191,56 @@ python -m tools.capture_check --phase 2
 `paper_assets/results_log.csv`, append-only, created once with this header:
 
 ```csv
-timestamp,git_commit,task_id,model_name,config_path,train_set,test_set,seed,auc,auc_ci_low,auc_ci_high,ap,eer,acc,ece,mce,brier,n_videos,notes
+timestamp,git_commit,task_id,model_name,config_path,train_set,test_set,seed,auc,auc_ci_low,auc_ci_high,ap,eer,acc,ece,mce,brier,n_videos,notes,run_id
 ```
 
 Helper every training/eval script must call — implement once in `src/eval/metrics.py`:
 
 ```python
 def log_result(task_id: str, model_name: str, config_path: str, train_set: str,
-               test_set: str, seed: int, metrics: dict, n_videos: int, notes: str = "") -> None:
+               test_set: str, seed: int, metrics: dict, n_videos: int, notes: str = "",
+               *, run_id: str) -> None:
     """Append one row to paper_assets/results_log.csv.
-    git_commit comes from `git rev-parse --short HEAD`; if the tree is dirty, suffix '-dirty'.
+    run_id is required and must come from start_run() for this task/model/seed/config.
+    git_commit is the run's manifest commit (`git rev-parse --short HEAD` at start_run, with
+    '-dirty' if the tree was dirty) - the code that was actually loaded.
     Missing metrics are written as empty strings, never as 0.0 (0.0 is a valid AUC).
+    Unknown metric keys raise ValueError.
     """
 ```
 
 The dirty-tree suffix matters: a number logged from uncommitted code is not reproducible, and you
 want that visible in the CSV rather than discovered at writing time.
+
+### Run identifier and per-run manifest (from SPEC-001, accepted 2026-11-24)
+
+Every run that logs a number first calls `start_run()` (`src/eval/run_manifest.py`), which returns
+`run_id = <YYYYMMDD-HHMMSS>_<task_id>_<model_name>_seed<n>` and writes
+`paper_assets/runs/<run_id>/manifest.yaml` (never deleted, invariant 5). One run = one process
+invocation; eval-only runs get their own `run_id`.
+
+```python
+def start_run(task_id, model_name, config_path, seed, research_question, *,
+              split_paths=(), resolved_config=None, evaluated_checkpoints=None) -> str: ...
+def finish_run(run_id, *, checkpoint_path=None, selected_by=None,
+               status="completed") -> None: ...   # status: completed | failed
+```
+
+The manifest records: `run_id`, `task_id`, `research_question`, `git_commit`, `config_path`,
+`resolved_config` (training: the C-28 file; eval: `runs/<run_id>/resolved_config.yaml`), `seed`,
+`splits` (sha256 of every split file read), `environment` (python, torch, cuda, gpu, `pip_freeze.txt`),
+`checkpoint` (the checkpoint this run **produced**: path, sha256, `selected_by` on FF++ val; null for
+eval runs), `evaluated_checkpoints` (list of checkpoints this run **loaded**: path, sha256,
+`training_run_id`; null for training runs), `started`, `finished`, `status`.
+
+Rules: training runs must pass non-empty `split_paths`. A non-null `training_run_id` must match that
+run's `checkpoint.sha256`. `training_run_id` may be null only for checkpoints that predate SPEC-001
+(the legacy capstone checkpoints in P1-T2); the caller declares this with `predates_spec=True`, and
+the sha256 is still recorded.
+
+**Acceptance tests:** `python -m pytest tests/test_results_log.py tests/test_run_manifest.py -v`
+(schema and column order, blank-vs-zero metrics, required `run_id`, manifest keys and split hashes,
+`-dirty` suffix, eval-run checkpoint linking including legacy checkpoints).
 
 ---
 

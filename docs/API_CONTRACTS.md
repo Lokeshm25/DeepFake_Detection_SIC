@@ -121,17 +121,23 @@ def write_pending_stub(capture_id: str, name: str, what_to_capture: str) -> None
 ```python
 # src/eval/metrics.py
 def log_result(task_id: str, model_name: str, config_path: str, train_set: str,
-               test_set: str, seed: int, metrics: dict, n_videos: int, notes: str = "") -> None: ...
+               test_set: str, seed: int, metrics: dict, n_videos: int, notes: str = "",
+               *, run_id: str) -> None: ...
+# src/eval/run_manifest.py (SPEC-001) - see IMPLEMENTATION.md §P0-T5
+def start_run(task_id, model_name, config_path, seed, research_question, *,
+              split_paths=(), resolved_config=None, evaluated_checkpoints=None) -> str: ...
+def finish_run(run_id, *, checkpoint_path=None, selected_by=None, status="completed") -> None: ...
 def bootstrap_auc(y_true, y_score, n_boot=1000, seed=42) -> tuple[float, float, float]: ...
 ```
 
 ### Results log schema (`paper_assets/results_log.csv`) — the only schema
 
 ```
-timestamp,git_commit,task_id,model_name,config_path,train_set,test_set,seed,auc,auc_ci_low,auc_ci_high,ap,eer,acc,ece,mce,brier,n_videos,notes
+timestamp,git_commit,task_id,model_name,config_path,train_set,test_set,seed,auc,auc_ci_low,auc_ci_high,ap,eer,acc,ece,mce,brier,n_videos,notes,run_id
 ```
-`git_commit` gets a `-dirty` suffix on an uncommitted tree. Missing metrics are empty strings,
-never 0.0.
+`git_commit` is captured at `start_run` and gets a `-dirty` suffix on an uncommitted tree. Missing
+metrics are empty strings, never 0.0. `run_id` links each row to
+`paper_assets/runs/<run_id>/manifest.yaml`.
 
 ---
 

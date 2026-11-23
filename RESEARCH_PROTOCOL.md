@@ -154,13 +154,13 @@ These restate how the invariants apply day to day. Where a task spec is more spe
 
 | Record | Where | Spec |
 |---|---|---|
-| Metrics + git commit (`-dirty` if uncommitted) + config path + train/test set + seed | `paper_assets/results_log.csv` | §P0-T5 |
+| Metrics + git commit (`-dirty` if uncommitted) + config path + train/test set + seed + `run_id` | `paper_assets/results_log.csv` | §P0-T5 |
+| Run manifest: research question, split hashes, environment, produced/loaded checkpoint hashes | `paper_assets/runs/<run_id>/manifest.yaml` | §P0-T5 (SPEC-001) |
 | Resolved configuration | `paper_assets/C-28_hyperparameters/<model>_seed<n>.yaml` | §P4 |
 | Per-epoch curves, VRAM, wall-clock | `paper_assets/C-16_training_curves.csv` | §P4 |
 | Per-video scores | `paper_assets/per_video_scores/` | invariant 5b |
 
-Run ID, research question, split hash, environment versions and checkpoint hash are **not yet**
-recorded; `docs/specs/SPEC-001_run_manifest.md` specifies them (status: APPROVED 2026-11-22, not yet implemented).
+Run manifests were added by `docs/specs/SPEC-001_run_manifest.md` (ACCEPTED 2026-11-24).
 
 **Never invent results, and never claim reproducibility without evidence** — a re-run, a logged
 row, or a file that exists. "Should reproduce" is a hypothesis.

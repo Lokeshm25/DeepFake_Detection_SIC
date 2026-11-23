@@ -1,6 +1,6 @@
 # SPEC-001 — Run identifier and per-run manifest
 
-**Status:** APPROVED — owner, 2026-11-22
+**Status:** ACCEPTED — owner, 2026-11-24 (approved 2026-11-22; amendment 1, see §13). Folded into `IMPLEMENTATION.md` §P0-T5.
 **Change level:** C (changes the `IMPLEMENTATION.md` §P0-T5 results-log schema)
 **Related task IDs:** P0-T5 (and every training/eval script that calls `log_result`)
 **Author:** Claude   **Date:** 2026-11-21
@@ -41,10 +41,12 @@ checkpoint:                        # checkpoint this run PRODUCED; null for eval
   path: checkpoints/baseline_b3/seed42/best.pt
   sha256: <sha256>
   selected_by: "max val AUC (FF++ val)"   # invariant 2
-evaluated_checkpoint:              # checkpoint this run LOADED; null for training runs
-  path: checkpoints/baseline_b3/seed42/best.pt
-  sha256: <sha256>                 # hashed at load time
-  training_run_id: 20261201-213000_P4-T1_baseline_b3_seed42   # the run whose checkpoint.sha256 matches
+evaluated_checkpoints:             # every checkpoint this run LOADED; null for training runs
+  - path: checkpoints/baseline_b3/seed42/best.pt
+    sha256: <sha256>               # hashed at load time
+    training_run_id: 20261201-213000_P4-T1_baseline_b3_seed42   # run whose checkpoint.sha256 matches
+  # training_run_id may be null ONLY for a checkpoint that predates SPEC-001 (e.g. the legacy
+  # capstone checkpoints in P1-T2); the sha256 is still recorded.
 started: 2026-12-01T21:30:00
 finished: 2026-12-02T03:10:00
 status: completed                  # running | completed | failed
@@ -59,8 +61,10 @@ status: completed                  # running | completed | failed
   `sha256sum` of the files, and a dirty tree yields a `-dirty` commit.
 - A `log_result` call without `run_id` raises.
 - `test_eval_run_links_checkpoint`: an eval-only dry run gets its own `run_id`, has
-  `checkpoint: null`, and its `evaluated_checkpoint.sha256` equals the `checkpoint.sha256` in the
-  manifest named by `evaluated_checkpoint.training_run_id`.
+  `checkpoint: null`, and each `evaluated_checkpoints[i].sha256` equals the `checkpoint.sha256` in
+  the manifest named by its `training_run_id`.
+- `test_eval_run_legacy_checkpoints`: an eval run loading several checkpoints with
+  `training_run_id: null` records each path and sha256; a non-null ID with a mismatched hash raises.
 
 ## 12. Restricted scientific changes
 None — this changes provenance only. No model, data, or metric behaviour changes.
@@ -69,8 +73,12 @@ None — this changes provenance only. No model, data, or metric behaviour chang
 None open.
 
 **Decided (owner, 2026-11-22):** eval-only runs (P4-T4, P6-T1) get their **own** `run_id`
-(one run = one process invocation), linked back through `evaluated_checkpoint` (path, sha256,
-`training_run_id`) as in §3.
+(one run = one process invocation), linked back through `evaluated_checkpoints` as in §3.
+
+**Amendment 1 (owner, 2026-11-22):** `evaluated_checkpoint` became the list
+`evaluated_checkpoints`, and `training_run_id` may be null for checkpoints that predate SPEC-001.
+Reason: P1-T2 (`IMPLEMENTATION.md:274-281`) evaluates three legacy checkpoints that have no
+training manifest. Provenance only; no model, data or metric change.
 
 **After acceptance:** fold §3 and §9 into `IMPLEMENTATION.md` §P0-T5 and `docs/API_CONTRACTS.md`
 (results_log schema), per `RESEARCH_PROTOCOL.md` §5.

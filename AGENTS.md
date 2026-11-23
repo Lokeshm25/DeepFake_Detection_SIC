@@ -204,8 +204,8 @@ Level B/C findings (`RESEARCH_PROTOCOL.md` §8). Report the evidence and needed 
 Leave global `~/.codex/AGENTS.md`, agent definitions, plugins, Playwright MCP, and Claude-only
 `.claude/skills/` unchanged. Do not load or copy Claude-only skills into Codex; shared rules live
 in `RESEARCH_PROTOCOL.md`. Collaboration setup does not authorize changes to configuration values,
-legacy code, or `paper_assets/`. `SPEC-001_run_manifest.md` was approved on 2026-11-22; implement it
-through `docs/handoffs/SPEC-001.md`.
+legacy code, or `paper_assets/`. `SPEC-001_run_manifest.md` was accepted on 2026-11-24 and is folded
+into `IMPLEMENTATION.md` §P0-T5.
 
 ---
 
