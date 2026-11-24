@@ -27,6 +27,10 @@ C-03:
     - C-03_environment.yml
     - C-03_pip_freeze.txt
     - C-03_hardware.md
+    # Owner-designated aiml supplements; earlier host-only snapshots stay intact.
+    - C-03_pip_freeze_aiml.txt
+    - C-03_pip_freeze_aiml.md
+    - C-03_hardware_aiml.md
 C-04:
   phase: 1
   kind: auto
