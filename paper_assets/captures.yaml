@@ -1,0 +1,271 @@
+# P0-T4: declarations from ROADMAP.md's capture index and Files blocks.
+# Figure companion files additionally enforce RESEARCH_PROTOCOL.md §7.
+# Glob patterns cover outputs whose names are determined by a later approved task.
+# manual_files is a subset of files: screenshots in it are the owner's responsibility.
+C-01:
+  phase: 0
+  kind: auto
+  title: Environment and Blackwell build gate
+  files:
+    - C-01_env_gate.txt
+    - C-01_env_gate.md
+C-02:
+  phase: 0
+  kind: human_in_loop
+  title: Citation audit and owner-confirmed verdicts
+  files:
+    - C-02_citation_audit.md
+    - C-02_citation_audit.csv
+    - C-02_citation_audit/
+  manual_files:
+    - C-02_citation_audit/
+C-03:
+  phase: 0
+  kind: auto
+  title: Environment freeze and hardware description
+  files:
+    - C-03_environment.yml
+    - C-03_pip_freeze.txt
+    - C-03_hardware.md
+C-04:
+  phase: 1
+  kind: auto
+  title: Immutable legacy state archive
+  files:
+    - C-04_legacy_baseline/
+    - C-04_legacy_baseline.md
+C-05:
+  phase: 1
+  kind: auto
+  title: Leak quantification (all, seen, unseen)
+  files:
+    - C-05_leak_quantification.png
+    - C-05_leak_quantification.pdf
+    - C-05_leak_quantification_data.csv
+    - C-05_per_video_scores.csv
+    - C-05_leak_quantification.md
+C-06:
+  phase: 1
+  kind: auto
+  title: Seen versus unseen ROC curves
+  files:
+    - C-06_roc_seen_vs_unseen.png
+    - C-06_roc_seen_vs_unseen.pdf
+    - C-06_roc_seen_vs_unseen_data.csv
+    - C-06_roc_seen_vs_unseen.md
+C-07:
+  phase: 1
+  kind: auto
+  title: AMP fix diff and loss curves
+  files:
+    - C-07_amp_fix.diff
+    - C-07_amp_loss_curves.png
+    - C-07_amp_loss_curves.pdf
+    - C-07_amp_loss_curves_data.csv
+    - C-07_amp_fix.md
+C-08:
+  phase: 2
+  kind: auto
+  title: Dataset provenance and on-disk counts
+  files:
+    - C-08_datasets.csv
+    - C-08_datasets.md
+C-09:
+  phase: 2
+  kind: manual
+  title: EULA approvals and licence pages
+  files:
+    - C-09_licences/ffpp_eula_email.png
+    - C-09_licences/celebdf_eula_email.png
+    - C-09_licences/dfdc_terms_page.png
+    - C-09_licences/dfdcp_terms_page.png
+    - C-09_licences/dfd_terms_page.png
+    - C-09_licences.md
+C-10:
+  phase: 3
+  kind: human_in_loop
+  title: Detector bake-off and owner spot-checks
+  files:
+    - C-10_detector_bakeoff.csv
+    - C-10_detector_bakeoff/contact_sheet_*.png
+    - C-10_detector_bakeoff.md
+C-11:
+  phase: 3
+  kind: auto
+  title: Detector crop comparison
+  files:
+    - C-11_detector_crops.png
+    - C-11_detector_crops.pdf
+    - C-11_detector_crops_data.csv
+    - C-11_detector_crops.md
+C-12:
+  phase: 3
+  kind: auto
+  title: Crop-margin comparison and examples
+  files:
+    - C-12_crop_margin.csv
+    - C-12_crop_margin.png
+    - C-12_crop_margin.pdf
+    - C-12_crop_margin_data.csv
+    - C-12_crop_margin_examples.png
+    - C-12_crop_margin_examples.pdf
+    - C-12_crop_margin_examples_data.csv
+    - C-12_crop_margin.md
+C-13:
+  phase: 3
+  kind: auto
+  title: Clean-split verification and before-after contamination
+  files:
+    - C-13_verify_splits.txt
+    - C-13_split_composition.csv
+    - C-13_contamination_before_after.png
+    - C-13_contamination_before_after.pdf
+    - C-13_contamination_before_after_data.csv
+    - C-13_verify_splits.md
+C-14:
+  phase: 4
+  kind: auto
+  title: Baseline results matrix
+  files:
+    - C-14_baseline_matrix.csv
+    - C-14_baseline_matrix.md
+    - C-14_baseline_matrix.tex
+C-15:
+  phase: 4
+  kind: auto
+  title: Honest versus inflated comparison
+  files:
+    - C-15_honest_vs_inflated.png
+    - C-15_honest_vs_inflated.pdf
+    - C-15_honest_vs_inflated_data.csv
+    - C-15_honest_vs_inflated.md
+C-16:
+  phase: 4
+  kind: auto
+  title: Training curves and compute cost
+  files:
+    - C-16_training_curves.png
+    - C-16_training_curves.pdf
+    - C-16_training_curves_data.csv
+    - C-16_training_curves.csv
+    - C-16_training_cost.csv
+    - C-16_training_curves.md
+C-17:
+  phase: 4
+  kind: human_in_loop
+  title: Baseline failure gallery and owner interpretation
+  files:
+    - C-17_failure_gallery.png
+    - C-17_failure_gallery.pdf
+    - C-17_failure_gallery_data.csv
+    - C-17_failure_gallery/
+    - C-17_failure_gallery.csv
+    - C-17_failure_gallery.md
+C-18:
+  phase: 5
+  kind: auto
+  title: Backbone comparison
+  files:
+    - C-18_backbone_comparison.csv
+    - C-18_backbone_comparison.md
+C-19:
+  phase: 5
+  kind: auto
+  title: Reliability descriptor versus CRF
+  files:
+    - C-19_reliability_vs_crf.png
+    - C-19_reliability_vs_crf.pdf
+    - C-19_reliability_vs_crf_data.csv
+    - C-19_reliability_vs_crf.md
+C-20:
+  phase: 5
+  kind: auto
+  title: Mechanism verification
+  files:
+    - C-20_mechanism_verification.png
+    - C-20_mechanism_verification.pdf
+    - C-20_mechanism_verification_data.csv
+    - C-20_mechanism_verification.md
+C-21:
+  phase: 5
+  kind: auto
+  title: Per-stream trust heatmap
+  files:
+    - C-21_reliability_heatmap.png
+    - C-21_reliability_heatmap.pdf
+    - C-21_reliability_heatmap_data.csv
+    - C-21_reliability_heatmap.md
+C-22:
+  phase: 5
+  kind: auto
+  title: Reliability diagrams and calibration metrics
+  files:
+    - C-22_reliability_diagrams.png
+    - C-22_reliability_diagrams.pdf
+    - C-22_reliability_diagrams_data.csv
+    - C-22_calibration_metrics.csv
+    - C-22_reliability_diagrams.md
+C-23:
+  phase: 6
+  kind: auto
+  title: Final results matrix across three seeds
+  files:
+    - C-23_final_matrix.csv
+    - C-23_final_matrix_aggregated.csv
+    - C-23_final_matrix.md
+    - C-23_final_matrix.tex
+C-24:
+  phase: 6
+  kind: auto
+  title: Compression sweep and slope table
+  files:
+    - C-24_compression_sweep.png
+    - C-24_compression_sweep.pdf
+    - C-24_compression_sweep_data.csv
+    - C-24_slope_table.csv
+    - C-24_compression_sweep.md
+C-25:
+  phase: 6
+  kind: human_in_loop
+  title: Ablations and owner interpretations
+  files:
+    - C-25_ablations.csv
+    - C-25_ablations.md
+    - C-25_ablation_deltas.png
+    - C-25_ablation_deltas.pdf
+    - C-25_ablation_deltas_data.csv
+C-26:
+  phase: 6
+  kind: auto
+  title: Efficiency measurements
+  files:
+    - C-26_efficiency.csv
+    - C-26_efficiency.md
+C-27:
+  phase: 6
+  kind: human_in_loop
+  title: Qualitative wins selected by the owner
+  files:
+    - C-27_qualitative_wins.png
+    - C-27_qualitative_wins.pdf
+    - C-27_qualitative_wins_data.csv
+    - C-27_qualitative_wins/
+    - C-27_qualitative_wins.csv
+    - C-27_qualitative_wins.md
+C-28:
+  phase: 6
+  kind: auto
+  title: Resolved hyperparameters for reported runs
+  files:
+    - C-28_hyperparameters/
+    - C-28_hyperparameters.csv
+    - C-28_hyperparameters.md
+C-29:
+  phase: 7
+  kind: human_in_loop
+  title: Writing handoff and project summary
+  files:
+    - C-29_handoff/summary.md
+    - C-29_handoff/captures_index.md
+    - C-29_handoff/methods_draft.md
+    - C-29_handoff.md
