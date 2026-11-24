@@ -1,0 +1,43 @@
+# Owner-approved SPEC-002: frozen legacy feature-cache diagnostic, not causal leakage.
+task_id: P1-T2
+model_name: legacy_ensemble_nominal
+seed: 42                         # Current evaluation RNG initialization, not a training claim.
+bootstrap_seed: 42
+producer_seed: null              # Historical producer execution is not authenticated.
+producer_seed_provenance: >-
+  Unknown authenticated historical seed. The ensemble producer declares RANDOM_STATE=42
+  in src/ground_truth/train_ensemble_final.py; that source declaration does not authenticate
+  the frozen trio's execution settings or historical training video IDs.
+source_declared_ensemble_seed: 42
+research_question: >-
+  What are the frozen legacy ensemble's video-level AUCs and video-bootstrap CIs
+  for all and nominal current split-list cohorts in the 1168-video Celeb-DF subset?
+training_provenance: unverified
+device: cuda
+data:
+  embeddings: embeddings/test_celebdf
+  labels: data/labels.json
+  train_split: data/train.txt
+  val_split: data/val.txt
+  test_split: data/test_internal.txt  # Archived list; read only for nominal note counts.
+  feature_cache: ensemble_features_final/test_celebdf.npz
+  archive_inventory: docs/handoffs/P1-T1_archive_inventory.csv
+  model_source: src/ground_truth/models.py
+  expected_videos: 1168
+  expected_seen: 1064
+  expected_unseen: 104
+  frames_per_video: 8             # Existing legacy cache; no Phase3 reprocessing.
+  feature_dim: 1536               # Existing embedding/checkpoint dimension.
+checkpoints:
+  spatial: checkpoints/spatial/spatial_best_valAUC.pth
+  temporal: checkpoints/temporal/temporal_best_valAUC.pth
+  ensemble: checkpoints/ensemble_final/ensemble_artifacts.joblib
+validation:
+  temporal_cache_atol: 1.0e-5      # FP32 row-alignment check; stop, never loosen on failure.
+evaluation:
+  config: configs/eval_matrix.yaml
+  confidence: 0.95                # SPEC-002 video-bootstrap95% CI.
+  suspicious_auc: 0.95            # Binding unexplained high-AUC stop rule.
+output:
+  assets: paper_assets
+  scratch: .deepfake/batch01
