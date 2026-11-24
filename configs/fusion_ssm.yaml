@@ -3,7 +3,7 @@
 # Backbone settings live in configs/backbone_clip.yaml, the estimator in configs/reliability.yaml.
 
 # Gate 0-A result — written by P0-T1. The ONLY key that branches on the sm_120 build outcome.
-operator: mamba_cuda               # mamba_cuda | mamba_torch | film_attn
+operator: mamba_torch               # mamba_cuda | mamba_torch | film_attn
 
 backbone_config: configs/backbone_clip.yaml
 reliability_config: configs/reliability.yaml
