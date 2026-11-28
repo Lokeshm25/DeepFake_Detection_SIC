@@ -82,7 +82,7 @@ class AttentionPool(nn.Module):
         lengths = lengths.to(h.device)
         mask = torch.arange(T, device=h.device).unsqueeze(0) >= lengths.unsqueeze(1)
         scores = self.att(h).squeeze(-1)  # [B, T]
-        scores = scores.masked_fill(mask, float("-1e9"))
+        scores = scores.masked_fill(mask, torch.finfo(scores.dtype).min)
         weights = torch.softmax(scores, dim=1)
         weights = torch.nan_to_num(weights, nan=0.0, posinf=0.0, neginf=0.0)
         out = (h * weights.unsqueeze(-1)).sum(dim=1)

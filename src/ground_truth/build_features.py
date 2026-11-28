@@ -215,7 +215,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Process All Splits (adjust these names to your repo's folders)
-    splits = ["train", "val", "test", "test_internal", "reserved_200"]
+    splits = ["train", "val", "test", "reserved_200"]
 
     for split in splits:
         process_split(split, spatial_head, temporal_model, labels_map)

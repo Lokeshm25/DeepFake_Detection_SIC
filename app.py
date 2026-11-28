@@ -863,7 +863,6 @@ with col_hero:
 with col_badge:
     st.markdown("<br><br>", unsafe_allow_html=True)
     acc_col, lat_col = st.columns(2)
-    acc_col.metric("Accuracy", "99.2%", delta="↑ vs baseline")
     lat_col.metric("Latency",  "<250ms")
 
 st.markdown("---")

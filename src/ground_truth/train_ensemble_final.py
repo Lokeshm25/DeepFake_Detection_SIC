@@ -46,12 +46,11 @@ def train_and_evaluate():
     print(f"--- Loading Features from {CACHE_DIR} ---")
     X_tr, y_tr = load_data("train")
     X_val, y_val = load_data("val")
-    # prefer internal test if available
-    X_test, y_test = load_data("test_internal")
+    name = "test"
+    X_test, y_test = load_data(name)
     test_name = "Test (Internal)"
-    if X_test is None:
-        X_test, y_test = load_data("test")
-        test_name = "Test (External)"
+    if X_test is None or y_test is None:
+        raise FileNotFoundError(f"Expected {name}.npz; refusing to silently substitute another split.")
 
     if X_tr is None or y_tr is None:
         print("❌ CRITICAL: Train data missing. Run build_features.py first.")
