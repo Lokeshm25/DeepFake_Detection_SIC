@@ -112,8 +112,9 @@ even such corrections. Change Claude-specific instructions only when explicitly 
 2. **Never tune hyperparameters on a test set** — invariant 2
 3. **Never fabricate a citation** — invariant 9
 4. **Never invent a manual capture or human judgement** — `RESEARCH_PROTOCOL.md` §7
-5. **Never quote invalidated metrics** — 0.9695 is a mislabelled internal result, and the legacy
-   Celeb-DF evaluation is contaminated; neither establishes external generalization
+5. **Never quote invalidated metrics** — 0.9695 is a mislabelled internal result. The legacy
+   Celeb-DF 0.65 is a real cross-dataset number for FF++ + DFDC training (verified 2026-11-28), but it
+   is not an FF++-only result and must not be compared as one
 6. **Never skip a gate** — invariant 10
 
 ### Always Do These

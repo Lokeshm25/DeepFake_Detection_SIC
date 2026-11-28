@@ -211,7 +211,7 @@ the capture checker.
 
 ---
 
-## Phase 1 — Freeze the old project and measure the leak
+## Phase 1 — Freeze the old project and audit its provenance
 
 **Do this before touching anything else. It is not optional and it is not cleanup.**
 
@@ -222,6 +222,10 @@ intact. Second, and more valuable:
 > **You can measure how much the Celeb-DF leak inflated your reported number using the model you
 > already have, without retraining anything.** That measurement is a paper figure. It stops being
 > obtainable the moment the splits change.
+
+> **Correction (2026-11-28, done and verified):** the split lists `data/*.txt` do contain 905 / 159 / 69 Celeb-DF entries, but **no trained model consumed them**. The lists were regenerated *after* frame extraction (`extract_frames.ipynb`'s saved output shows it read 4066 / 762 / 255 entries); every legacy trainer reads the directories `preprocessed/frames/<split>/` or `embeddings/<split>/`, never the lists; and those directories contain 0 Celeb-DF videos (`train_temporal_clean.ipynb` output: "Train videos: 4066"; `ensemble_features_final/train.npz` has 4066 rows). The capstone trained on FF++ + DFDC, so its 0.65 Celeb-DF AUC is a genuine cross-dataset number. `P1-T2` therefore became a
+> provenance audit (SPEC-002), not a leak-inflation measurement, and C-05/C-06 are provenance
+> evidence rather than Figure 1. The paper's motivating figure is C-15 (Phase 4).
 
 ### `P1-T1` — Archive the current state
 
@@ -269,7 +273,8 @@ Two affect results, two are hygiene. Do them now so no later measurement inherit
 | Remove or correct the hardcoded `"99.2%"` | `app.py:866` | unsupported by any measurement in the repo |
 | Regenerate splits with **relative** paths | `data/*.txt` | current files hold dead `c:\Users\...\OneDrive\...` paths |
 
-> **CAPTURE C-07** `[AUTO]` — a before/after `git diff` of the `-1e9` fix, plus a short loss-curve
+> **CAPTURE C-07** `[AUTO]` — **moved to Phase 4 (`P4-T1`), owner decision 2026-11-28; the diff is
+> already captured.** A before/after `git diff` of the `-1e9` fix, plus a short loss-curve
 > comparison showing FP32 vs AMP training now agree. If you ever claim a speed improvement in the
 > paper, this is the evidence.
 > **Files:** `C-07_amp_fix.diff` (`git diff > ...`, not a screenshot of the editor),
@@ -279,8 +284,9 @@ Two affect results, two are hygiene. Do them now so no later measurement inherit
 
 ### Phase 1 exit gate
 
-`python -m tools.capture_check --phase 1` passes, and you can state your honest pre-modification
-cross-dataset AUC in one sentence.
+`python -m tools.capture_check --phase 1` passes (C-04–C-06), and you can state your
+pre-modification cross-dataset AUC in one sentence: *trained on FF++ + DFDC, 0.65 [0.62, 0.68] on
+Celeb-DF*.
 
 ---
 
@@ -466,11 +472,13 @@ C-13 complete.
 
 ## Phase 4 — The honest baseline
 
-**Objective:** the number the paper's motivation rests on. Also the number that proves the leak
-mattered.
+**Objective:** the number the paper's motivation rests on: the legacy architecture under the
+standard FF++-only protocol, comparable with published work.
 
 `P4-T1`. Retrain the **legacy architecture** (EfficientNet-B3 + Bi-LSTM + LR stacking) on the clean
-FF++-only splits, unchanged except for the fixes from `P1-T3`. This isolates the protocol change
+FF++-only splits, unchanged except for the fixes from `P1-T3`. Before training, also fix the spatial-head loader
+(`build_features.py`, weights never applied in the capstone) and the duplicate `-1e9` mask in
+`src/process_data/train_temporal.py`, then re-enable AMP and capture **C-07** (moved here from Phase 1). This isolates the protocol change
 from the architecture change — a reviewer will insist on that separation.
 
 `P4-T2`. Run B3 at its **native 300×300** as well as 224. Your current pipeline runs a B3 at
@@ -491,13 +499,15 @@ DFDCP, DFD.
 > `C-14_baseline_matrix.md` (rendered for reading), `C-14_baseline_matrix.tex` (booktabs, ready to
 > paste). No figure — this one is a table everywhere it appears.
 
-> **CAPTURE C-15** `[AUTO]` — the honest-vs-inflated comparison: old leaked Celeb-DF number (0.65),
-> C-05's unseen-only number, and this clean cross-dataset number, on one axis with a one-paragraph
-> explanation. **This is the paper's motivating figure and the core of contribution 5.**
-> **Files:** `C-15_honest_vs_inflated.png` + `.pdf` + `_data.csv` (label, auc, ci_low, ci_high,
+> **CAPTURE C-15** `[AUTO]` — the capstone-vs-FF++-only comparison (renamed 2026-11-28; the old
+> "honest vs inflated" framing assumed a leak that never reached training): the capstone's Celeb-DF
+> AUC (0.65, FF++ + DFDC training, from C-05), this phase's FF++-only legacy retrain, and the
+> DeepfakeBench baselines, each with in-domain vs Celeb-DF bars, on one axis with a one-paragraph
+> explanation. **This is the paper's motivating figure: high in-domain AUC collapses on unseen data.**
+> **Files:** `C-15_capstone_vs_ffpp_only.png` + `.pdf` + `_data.csv` (label, auc, ci_low, ci_high,
 > n_videos, and a `provenance` column naming the run each bar came from — three numbers from three
 > different protocols on one axis is exactly where a reviewer asks "measured how?"),
-> `C-15_honest_vs_inflated.md`.
+> `C-15_capstone_vs_ffpp_only.md`.
 
 > **CAPTURE C-16** `[AUTO]` — training curves (loss and val AUC vs epoch) for every model, plus
 > wall-clock time, epochs to best, and peak VRAM. Needed for the reproducibility section, and it
@@ -529,7 +539,8 @@ DFDCP, DFD.
 ### Phase 4 exit gate
 
 You can state, with a confidence interval: *"Trained on FF++ c23 only, the legacy architecture
-reaches X AUC in-domain and Y AUC on Celeb-DF v2."* Expect Y to be worse than 0.65. **That gap is
+reaches X AUC in-domain and Y AUC on Celeb-DF v2."* Y may be below 0.65, since FF++ alone is less
+diverse than the capstone's FF++ + DFDC. **That gap is
 the problem the paper solves — do not be discouraged by it, it is the deliverable of this phase.**
 
 ---
@@ -658,6 +669,13 @@ shifted test set measures nothing and is invariant 2 violated where the paper ma
 
 `P6-T5`. Efficiency: parameters, FLOPs, inference latency, peak VRAM, versus every baseline.
 
+`P6-T7` / `P6-T8` (**secondary, planned — `docs/specs/SPEC-003_lodo_secondary_protocol.md`,
+approved in principle 2026-11-28**). Leave-one-dataset-out training over FF++, DFDC and Celeb-DF v2
+(6 combinations, the FF++-only one reused from `P6-T1`) for the final model and the reference
+baseline, plus a separate GAN-forgery evaluation track. Reported in their own tables (`C-30`,
+`C-31`), never mixed into the primary results. They run after `P6-T1` and can be cut without
+touching the core claim.
+
 `P6-T6`. Robustness beyond compression: resize, additive noise, frame dropping, brightness/contrast
 shifts, blur. Cheap to add, and it broadens the robustness claim. **Outputs extend `C-24`** — the
 same robustness claim, so new files under that ID rather than a thirtieth capture.
@@ -765,9 +783,9 @@ the judgement. `[M]` manual — only you can produce it.
 | C-02 | 0 | H | **Citation audit table** | md + csv + png | **Bibliography source of truth** |
 | C-03 | 0 | A | Environment freeze + hardware spec | yml + txt + md | Reproducibility |
 | C-04 | 1 | A | Legacy state archive | dir | Provenance |
-| C-05 | 1 | A | **Leak quantification (seen/unseen/all)** | png/pdf + csv | **Figure 1, motivation** |
-| C-06 | 1 | A | Seen vs unseen ROC | png/pdf + csv | Motivation |
-| C-07 | 1 | A | AMP fix diff + curves | diff + png/pdf + csv | Methods note |
+| C-05 | 1 | A | Legacy Celeb-DF audit (listed/unlisted/all) | png/pdf + csv | Provenance; source of the 0.65 |
+| C-06 | 1 | A | Listed vs unlisted ROC | png/pdf + csv | Provenance (supplementary) |
+| C-07 | 4 | A | AMP fix diff + curves (moved from 1) | diff + png/pdf + csv | Methods note |
 | C-08 | 2 | A | Dataset provenance table | csv + md | Methods, near-verbatim |
 | C-09 | 2 | **M** | **EULA approvals + licence pages** | **png screenshots** | Submission requirement |
 | C-10 | 3 | H | **Detector bake-off** | csv + png sheets | Methods + supplementary |
@@ -775,7 +793,7 @@ the judgement. `[M]` manual — only you can produce it.
 | C-12 | 3 | A | Crop-margin diagnostic | csv + png/pdf | Possible standalone finding |
 | C-13 | 3 | A | **Clean-split verification** | txt + csv + png/pdf | **Credibility anchor** |
 | C-14 | 4 | A | Baseline matrix | csv + md + tex | Table 1 |
-| C-15 | 4 | A | **Honest vs inflated** | png/pdf + csv | **Motivating figure, contribution 5** |
+| C-15 | 4 | A | **Capstone vs FF++-only** | png/pdf + csv | **Motivating figure** |
 | C-16 | 4 | A | Training curves + cost | png/pdf + csv | Reproducibility |
 | C-17 | 4 | H | Baseline failure gallery | png/pdf + dir + csv | Qualitative motivation |
 | C-18 | 5 | A | Backbone comparison | csv + md | Ablation |

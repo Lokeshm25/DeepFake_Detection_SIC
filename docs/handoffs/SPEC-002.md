@@ -1,7 +1,7 @@
 # Handoff — SPEC-002
 
 **SPEC:** `docs/specs/SPEC-002_legacy_audit_provenance.md`
-**Status:** IN REVIEW — owner-approved amendment implemented; verification in P1-T2
+**Status:** READY FOR OWNER — reviewed by Claude 2026-11-28
 **Related task:** P1-T2; source evidence in `docs/handoffs/P1-T2.md`.
 
 ## 1. Implementation plan (Codex)
@@ -31,7 +31,14 @@ external or causal leak-inflation claim is made. Claude review and owner final a
 
 ## 4. Review (Claude) — round 1
 
-Pending Claude's independent scientific and implementation review; scope is owner-approved.
+**Diff reviewed:** `faddbf3`   **Verdict:** CONFORMANT
+**Reviewer:** Claude, 2026-11-28
+
+The implementation matches the approved amendment (see P1-T2 §4). Claude's 2026-11-28 verification
+upgraded SPEC-002's §1 hypothesis to Fact (P1-T2 finding 1): the capstone never trained on Celeb-DF.
+SPEC-002 is ready for owner acceptance and is folded into `IMPLEMENTATION.md` §P1-T2 as a note.
+
+Fresh verification by Claude, 2026-11-28, in `aiml`: `python -m pytest -q` → **191 passed in 163.94s**; `python -m tools.capture_check --phase 1` run before and after the owner's C-07 decision (see PHASE-1-EXIT).
 
 ## 5. Response (Codex) — round 1
 

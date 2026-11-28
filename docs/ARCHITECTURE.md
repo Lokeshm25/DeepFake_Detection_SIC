@@ -37,7 +37,8 @@ flowchart LR
 ```
 
 **Known Issues** (see `RESEARCH_ANALYSIS.md` §1.2):
-- 905 Celeb-DF videos in training data (data leakage)
+- 905 Celeb-DF entries in the split lists (never used for training — verified 2026-11-28)
+- Spatial-head checkpoint never loaded into the ensemble (prefix mismatch, `strict=False`)
 - 8 frames per video (insufficient for temporal claims)
 - No face detection of its own — relied on third-party crops
 - EfficientNet-B3 at 224px (native is 300)

@@ -291,6 +291,12 @@ most in `C-24`, where the whole claim is that one line's slope differs from the 
 
 ## P1-T2 — Quantify the leak
 
+> **Executed as SPEC-002 (provenance-aware diagnostic).** The "seen/unseen" groups below are
+> *list membership*, not training exposure: verification showed no model was trained on the lists
+> (`RESEARCH_ANALYSIS.md` §1.2(a)), and the `unseen_auc < all_auc` acceptance was replaced by a
+> data/provenance-completeness gate. Result: all 0.652 [0.620, 0.683] n=1168; listed 0.658 n=1064;
+> unlisted 0.598 [0.492, 0.705] n=104. The original spec text below is kept as history.
+
 `tools/quantify_leak.py`. **Run before Phase 3 regenerates splits.** After that, this measurement is
 permanently unavailable.
 
@@ -356,8 +362,10 @@ scores = scores.masked_fill(mask, float("-1e9"))
 # AFTER
 scores = scores.masked_fill(mask, torch.finfo(scores.dtype).min)
 ```
-Then re-enable AMP in `train_temporal.py` (remove the "FP32 is more stable" guard) and confirm loss
-curves match FP32 within noise over 3 epochs. Capture both curves for `C-07`.
+The AMP re-enable and its FP32-vs-AMP loss-curve check (`C-07`) moved to `P4-T1` (owner decision
+2026-11-28): the legacy trainer is `src/process_data/train_temporal.py`, which has no AMP path and
+its own copy of the `-1e9` mask, and the only valid data to train it on are the Phase 3 splits.
+`P4-T1` applies Fix 1 to that file too, adds AMP, and captures both curves for `C-07`.
 
 **Fix 2 — test-split mislabel.** In `src/ground_truth/build_features.py:218`, the list includes
 `"test_internal"` but `ensemble_features_final/` never receives it, so

@@ -1,7 +1,8 @@
 # Project Guide — where this project came from, what changed, and where it stands
 
 **Written for:** the owner (Lokesh), so you can take back control of your own project.
-**Written by:** Claude, 2026-11-24. The facts here come from the repository, the git history and
+**Written by:** Claude, 2026-11-24. **Updated 2026-11-28** with your corrections (capstone data,
+the leak verdict, the new secondary protocol) and the results of Codex's overnight batch. The facts here come from the repository, the git history and
 the past-session prompts (`docs/past_session_prompts.md`).
 **Plain-language rule:** every technical term is explained the first time it appears, and again in
 the glossary (§13). If something here is unclear, that's a defect in this guide. Ask, and it gets
@@ -14,18 +15,20 @@ rewritten.
 - **February–March 2026:** you built a working deepfake detector as a capstone. It reported good
   numbers, including about 0.65 on a "different" dataset (Celeb-DF).
 - **August 2026:** you decided to turn it into a journal paper, and asked for an independent
-  audit. The audit found that **905 Celeb-DF videos had accidentally been put into the training
-  data**. So the 0.65 wasn't a fair test, because the model had already seen most of those videos.
-- That discovery changed everything. We kept your old system as the **"before" picture**, and
-  planned a **new model with one clear research idea**: the model should judge, for each video,
+  audit. The audit found **905 Celeb-DF videos in the training *list***, and concluded the 0.65
+  wasn't a fair test.
+- **November 28 — corrected:** checking every notebook and script showed the training code never
+  read that list. It read folders of frames that contain **zero** Celeb-DF videos. Your capstone
+  trained on **FF++ + DFDC** only, and **0.65 on Celeb-DF was a real cross-dataset result.**
+- We keep your old system as the **"before" picture**, and are building a **new model with one
+  clear research idea**: the model should judge, for each video,
   *how much each type of evidence can be trusted*, and lean on the trustworthy evidence.
 - **September and November 2026:** a lot of planning documents, a lot of fixing of those documents,
   and then a working method for two AI assistants (Claude and Codex) to work on the project
   safely under your control.
-- **Today:** planning is finished. The first piece of real code, the results logbook, is built,
-  tested and committed. **No new model has been trained yet.** The next step is to archive the old
-  system and measure exactly how much the leak inflated its result. That measurement becomes
-  Figure 1 of the paper.
+- **Today (Nov 28):** Phases 0 and 1 are done and reviewed: helpers, capture checker,
+  environment freeze, the old system archived, its Celeb-DF score re-measured (0.65 [0.62–0.68]),
+  and three old bugs fixed. **No new model has been trained yet.** Next: datasets (Phase 2).
 
 ---
 
@@ -47,7 +50,14 @@ This is what you built, in plain terms. It still exists, untouched, in `src/grou
    about 80%.
 7. **A Streamlit demo app** (`app.py`) to try it on a video.
 
-**Reported numbers (README):** about 0.97 on its own test set, and about 0.65 on Celeb-DF.
+**Training data:** FF++ + DFDC (third-party face crops), split 4066 / 762 / 255 videos.
+**Reported numbers (README):** about 0.97 on its own test set, and about 0.65 on Celeb-DF, which
+it never trained on.
+
+**One hidden bug found in November:** in step 5, the spatial model's trained weights were never
+actually loaded (a naming mismatch that the code silently ignored). So the four "spatial" numbers
+came from an *untrained* layer, and the ensemble's real signal came from the temporal model.
+The EfficientNet-B3 embeddings themselves were fine.
 
 ---
 
@@ -59,7 +69,7 @@ AI mode) and your code, and asked for an independent analysis. The full result i
 
 | Problem | What it means | Status |
 |---|---|---|
-| **The Celeb-DF leak** | `split_dataset.ipynb:180` has a comment saying Celeb-DF is *not* used for training, but the code put it in the training list anyway. 905 of 5000 training videos were Celeb-DF. | Will be fixed when the data is split again (P3-T4). Before that, we **measure** it (P1-T2). |
+| **The Celeb-DF list leak** | `split_dataset.ipynb:180` says Celeb-DF is *not* used for training, but the code put it in the training list anyway (905 of 5000). **Nov 28: verified that no model was trained from that list** — the trainers read frame folders that have no Celeb-DF. | The list is rebuilt in P3-T4. The 0.65 stands. |
 | **"0.9695 External" is mislabelled** | `results.txt` says "Test (External) AUC: 0.9695". It's actually your *internal* test set. A missing file made the code fall back silently. | Never quote 0.9695 as external. Fix in P1-T3. |
 | **"99.2%" in the app** | A hardcoded accuracy number that no measurement supports. | Remove in P1-T3. |
 | **AMP was turned off** | A `-1e9` value overflows in half-precision maths and produced errors (NaN), so faster training had been disabled. | One-line fix in P1-T3, which makes training roughly 2× faster. |
@@ -68,9 +78,10 @@ AI mode) and your code, and asked for an independent analysis. The full result i
 | **The fusion is weak** | 5 summary numbers can't capture how the two streams relate. | Replaced by the new mechanism (Phase 5). |
 | **The research documents can't be cited** | Several cite an Instagram reel, a course-assignment page and a pharmacy proceedings, and one shows *invented* "simulated/target" numbers next to real ones. | Every citation must be checked by hand (invariant 9, capture C-02). |
 
-**Why this is good news, not just bad news:** the leak means the *honest* cross-dataset number will
-be lower than 0.65. That makes the paper's motivation stronger: "detectors fail under real-world
-shift much worse than people report." That's a true and publishable story.
+**What this means for the paper:** your old detector scores about 0.97 on data like its training
+data and 0.65 on a dataset it never saw. That drop *is* the problem the paper solves. Figure 1
+becomes "a standard detector collapses on unseen data" (capture C-15), not "the leak inflated our
+number".
 
 ---
 
@@ -124,8 +135,8 @@ different engine. Gate 0-A (task P0-T1) decides which engine we use.
 | Evidence streams | Spatial + temporal | Spatial + frequency + temporal |
 | Time model | Bi-LSTM | Selective SSM (Mamba), or the FiLM attention fallback |
 | Fusion | Logistic regression on 5 numbers | Reliability-conditioned fusion inside the SSM |
-| Training data | FF++ **+ leaked Celeb-DF** | **FF++ only**, always |
-| Test datasets | Celeb-DF (contaminated) | Celeb-DF v2, DFDC, DFDCP, DFD, FF++ c40, never trained on |
+| Training data | FF++ + DFDC | **Main experiment: FF++ only.** Second experiment: each dataset and each pair (SPEC-003) |
+| Test datasets | Celeb-DF (a real cross-dataset test) | Celeb-DF v2, DFDC, DFDCP, DFD, FF++ c40, never trained on in that run; plus a separate GAN-forgery track |
 | Seeds | 1 | 3 (42, 1337, 2024), reported as mean ± std |
 | Target | Capstone grade | Journal: *Information Fusion* (Elsevier) |
 
@@ -142,8 +153,13 @@ The old system isn't thrown away. It's retrained honestly on FF++ only (Phase 4)
   DFDC…), made with different fakes, cameras and compression. This is what happens in the real
   world, and it's where detectors collapse.
 - **The rule that protects it (invariant 1):** the test datasets must **never** be used in training,
-  in validation, or for any choice we make. The capstone broke this rule by accident. That's the
-  leak.
+  in validation, or for any choice we make. The capstone's split *list* broke this rule by accident,
+  but luckily the model never used that list.
+- **Your second experiment (SPEC-003, agreed Nov 28):** train on each of FF++, DFDC and Celeb-DF
+  alone, then on each pair, and always test on the one(s) left out. Analogy: a student who studied
+  from one textbook, then from two, and each time is examined on a book they never opened. It runs
+  after the main results, for the final model and the strongest baseline only, and gets its own
+  table. A **GAN track** (fakes made by a different family of generators) is a separate extra test.
 - **Rule of thumb:** a cross-dataset AUC above about 0.95 from an FF++-trained model is suspicious
   and stops work until explained, because it usually means leakage.
 
@@ -180,14 +196,17 @@ assistants. The direction is stable.
 
 | Item | Evidence |
 |---|---|
-| The leak is real: 905 / 159 / 69 Celeb-DF videos in train / val / internal test | Counted from `data/*.txt` (now tracked in git as evidence). |
+| The list leak exists (905 / 159 / 69 in `data/*.txt`) **but never reached a model** | Nov 28: frame and embedding folders hold 0 Celeb-DF; notebook outputs show training on 4066 videos. |
+| The capstone's Celeb-DF score is 0.652 [0.620–0.683], n = 1168 | Re-measured by Codex in P1-T2 from the frozen models; all inputs hash-checked. |
+| Phases 0–1 code (figure helpers, capture checker, archive, three fixes) | 191 automated tests pass, run fresh by Claude on Nov 28. |
 | 0.9695 is the internal test set, not external | Traced in code: `build_features.py:218` → `train_ensemble_final.py:50-54`. |
 | The 5 arXiv papers exist with the right titles; two author names were corrected | Checked against arXiv in September. **Not yet citable:** you still have to confirm each one in C-02. |
 | **Results logbook + run records (P0-T5 / SPEC-001)** | 28 automated tests pass, plus code-style, formatting and type checks. Run fresh by Claude on Nov 24, independently of Codex. Committed in `b444c5e`. |
 | Documents are consistent with each other | Full verification pass on Nov 21. |
 | Codex follows the rules | Onboarding reviewed twice, accepted by you. |
 
-**What you must NOT rely on or quote:** the 0.65 Celeb-DF AUC (contaminated), 0.9695 (mislabelled),
+**What you must NOT rely on or quote:** 0.65 as an "FF++-only" number (it came from FF++ + DFDC
+training), the old spatial+temporal ensemble as "two working streams", 0.9695 (mislabelled),
 99.2% (unsupported), and any number from the four AI research documents. Also don't use Aletheia's
 0.966 DFDC AUC as "the bar to beat" until we've read the paper and know how it was trained.
 
@@ -321,27 +340,28 @@ screenshots of code output.
 
 ---
 
-## 10. Current state — exactly (2026-11-24)
+## 10. Current state — exactly (2026-11-28)
 
 **Done:**
 - All planning documents, consistent with each other (`RESEARCH_ANALYSIS.md`, `ROADMAP.md`,
   `IMPLEMENTATION.md`, `docs/ARCHITECTURE.md`, `docs/API_CONTRACTS.md`, configs).
 - The working rules (`RESEARCH_PROTOCOL.md`, `CLAUDE.md`, `AGENTS.md`), skills and templates.
 - **P0-T5 + SPEC-001:** the logbook and run records. Built, tested, accepted, pushed.
-
-**In progress (Codex, overnight — BATCH-01):**
-P0-T6 figure helpers → P0-T4 capture checker → P0-T3 environment freeze → P0-T1 Mamba install test
-(decides the engine) → P1-T1 archive the old system → P1-T2 measure the leak (Figure 1) →
-P1-T3 the four cheap fixes → Phase 1 exit check. Codex commits each task locally (no push) and
-writes a summary at the bottom of the batch file. Claude reviews each task next.
+- **BATCH-01 (Codex, overnight Nov 24), reviewed by Claude Nov 28:** figure helpers (P0-T6),
+  capture checker (P0-T4), environment freeze (P0-T3), Mamba test (P0-T1), old system archived
+  (P1-T1), Celeb-DF re-measured (P1-T2 / SPEC-002), three fixes (P1-T3). **Phase 1 gate passes**
+  after you moved C-07 (the faster-training proof) to Phase 4.
+- **Mamba engine:** Ubuntu 22.04 installed in WSL2 on Nov 28 so the fast CUDA version can be
+  built (see C-01 and P0-T1's addendum for the result).
+- **SPEC-003** (the second experiment + GAN track) approved in principle; four details are open.
 
 **Waiting on you:**
 - **P0-T2 / C-02, the citation audit:** open the 5 arXiv pages, confirm each one, take dated
   screenshots. Claude can prepare the table first.
 - **Dataset access (Phase 2):** request FF++, Celeb-DF v2 (needs your institutional email) and
   DFDC access. **Screenshot each approval when it arrives (C-09).**
-- A WSL2 Ubuntu install, only if Codex reports that native Windows Mamba failed and you want to try
-  attempt 2 before falling back.
+- **SPEC-003 open details:** how much of DFDC to train on, licence checks, which GAN dataset.
+- **Accept the BATCH-01 tasks** (each record is marked READY FOR OWNER).
 
 **Not started:** Phases 2–7.
 
@@ -352,12 +372,12 @@ writes a summary at the bottom of the batch file. Claude reviews each task next.
 | Phase | What | Roughly | Main output |
 |---|---|---|---|
 | **0 — Gates & environment** | Engine test (Mamba?), citation check, environment freeze, helpers | Nearly done (overnight) | Engine decision; C-01, C-02, C-03 |
-| **1 — Freeze old project & measure the leak** | Archive the capstone, measure seen vs unseen Celeb-DF, 4 quick fixes | Overnight | **Figure 1** (C-05/C-06) — the honest starting number |
+| **1 — Freeze old project & audit it** | Archive the capstone, re-measure Celeb-DF, 3 quick fixes | **Done** | The starting number: 0.65 (FF++ + DFDC training) |
 | **2 — Datasets** | Download FF++, Celeb-DF v2, DFDCP (first), DFD, DFDC (≈470 GB, in parts) | Days, mostly waiting on approvals | Data on disk; provenance table; licence screenshots |
 | **3 — Preprocessing** | Pick a face detector by test, 32 frames, 320px crops, rebuild the splits correctly | ~1–2 weeks | Clean splits, with proof of no leak (C-13) |
-| **4 — Honest baseline** | Retrain your old model on FF++ only; two published baselines; full test matrix | ~1–2 weeks | **"Honest vs inflated" figure** (C-15), Table 1 |
+| **4 — Honest baseline** | Retrain your old model on FF++ only (fixing its two loader bugs, faster AMP training); two published baselines; full test matrix | ~1–2 weeks | **Motivating figure** (C-15: capstone vs FF++-only), Table 1 |
 | **5 — The mechanism** | Backbone, reliability estimator, reliability-conditioned fusion, calibration | Main research work | **Mechanism verification figure** (C-20): does trust drop as compression rises? |
-| **6 — Full evaluation** | Final matrix (3 seeds), compression sweep, calibration, ablations, efficiency, robustness | ~2–3 weeks GPU | Tables 2–4, the "money figure" (C-24) |
+| **6 — Full evaluation** | Final matrix (3 seeds), compression sweep, calibration, ablations, efficiency, robustness; then the second experiment (dataset combinations) and GAN track | ~2–3 weeks GPU + ~2 for SPEC-003 | Tables 2–4, the "money figure" (C-24), C-30/C-31 |
 | **7 — Writing handoff** | Assemble everything for your teammate, methods draft, final citation pass, submit | — | Submission to *Information Fusion* |
 
 **The decision points ahead that only you can make:** which engine (after P0-T1), which face

@@ -12,12 +12,13 @@ Hardware: Lenovo Legion Pro 7i Gen 10 — Core Ultra 9 275HX (24C), 64 GB DDR5-6
 
 Nine findings, ordered by how much they change what you should do next.
 
-1. **The headline result in `README.md` is not a cross-dataset result.** 905 of 5000 training
-   videos are Celeb-DF. The reported "External (Celeb-DF) AUC ≈ 0.65" was measured largely on data
-   the model trained on. Your true generalization gap is **worse than 0.65**.
-2. **This is leverage, not just a defect.** A larger honest gap is a stronger motivation section.
-   The paper's opening result becomes "detectors fail under distribution shift far worse than the
-   literature's optimistic protocols suggest" — which is both true and publishable.
+1. **~~The headline result in `README.md` is not a cross-dataset result.~~ Corrected 2026-11-28:
+   it is.** The split lists contain 905 Celeb-DF training entries, but verification of the
+   notebooks and scripts showed no model was ever trained on them (§1.2(a)). The capstone trained on
+   FF++ + DFDC and scored 0.65 on unseen Celeb-DF — a genuine cross-dataset gap.
+2. **The gap is still the motivation.** A detector that reaches ~0.97 in-domain and 0.65 on an
+   unseen dataset is exactly the distribution-shift failure this paper addresses. The opening result
+   becomes "even with two training datasets, a standard detector collapses to 0.65 on unseen data".
 3. **The tri-stream + SBI + calibration proposal is not publishable at your target tier.** Every
    pairwise interaction in it is already published (CAST owns spatial+temporal cross-attention;
    FSBI owns SBI+frequency). The critique file's assessment is correct, and better-supported than
@@ -92,7 +93,19 @@ Celeb-DF entries to `entries`, which is shuffled into all splits. Measured on di
 | `data/test_internal.txt` | 69 | 314 |
 
 `notebooks/test_CelebDF.ipynb` then evaluates on all 1168 Celeb-DF videos — approximately 78 % of
-which appear in a training or validation split. **The README's 0.65 is not a cross-dataset number.**
+which appear in a training or validation *list*.
+
+> **Correction (2026-11-28, verified against the notebooks and scripts):** the split lists `data/*.txt` do contain 905 / 159 / 69 Celeb-DF entries, but **no trained model consumed them**. The lists were regenerated *after* frame extraction (`extract_frames.ipynb`'s saved output shows it read 4066 / 762 / 255 entries); every legacy trainer reads the directories `preprocessed/frames/<split>/` or `embeddings/<split>/`, never the lists; and those directories contain 0 Celeb-DF videos (`train_temporal_clean.ipynb` output: "Train videos: 4066"; `ensemble_features_final/train.npz` has 4066 rows). The capstone trained on FF++ + DFDC, so its 0.65 Celeb-DF AUC is a genuine cross-dataset number. The list
+> defect is still real and is fixed by the rebuilt splits in `P3-T4`; it simply never reached a
+> model. `P1-T2` (under SPEC-002) found no meaningful AUC difference between "listed" and
+> "unlisted" Celeb-DF videos (0.658 vs 0.598, overlapping CIs), consistent with no exposure.
+
+**(a2) The ensemble's spatial features came from an untrained head.** `build_features.py`
+strips the `head.` prefix from the spatial checkpoint keys, but `SpatialHead` expects it, and the
+load uses `strict=False` — so none of the four trained head tensors were applied, silently. The
+four spatial columns of the stacking features were produced by a randomly initialised head; the
+ensemble's signal came from the temporal model. Verified against
+`checkpoints/spatial/spatial_best_valAUC.pth` keys (2026-11-28).
 
 **(b) `results.txt` mislabels its test set.**
 `build_features.py:218` iterates `["train","val","test","test_internal","reserved_200"]`, but
@@ -555,7 +568,9 @@ Every code claim in this document was checked against source during preparation.
 
 | Claim | Verified by |
 |---|---|
-| 905 Celeb-DF in `train.txt`; 159 val; 69 test_internal | `grep -ci celeb` on each split file |
+| 905 Celeb-DF in `train.txt`; 159 val; 69 test_internal (lists only) | `grep -ci celeb` on each split file |
+| No trained model used those lists (correction, 2026-11-28) | `extract_frames.ipynb` saved output (4066/762/255); trainers glob `preprocessed/frames/` and `embeddings/`; 0 Celeb-DF stems in either |
+| Spatial head weights never loaded | `build_features.py:31-78` vs `models.py:11-19`; checkpoint keys `head.0.*`, `head.3.*` |
 | Celeb-DF appended to `entries` despite comment | `notebooks/split_dataset.ipynb:180-184` |
 | 5-D fusion vector → LogisticRegression | `build_features.py:178`; `train_ensemble_final.py:61` |
 | `test_internal.npz` absent → "Test (External)" mislabel | `ls ensemble_features_final/`; `build_features.py:218`; `train_ensemble_final.py:50-54` |

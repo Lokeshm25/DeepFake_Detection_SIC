@@ -1,10 +1,11 @@
 # Deepfake Detection System
 
-> ⚠️ **Research Integrity Notice**: The results reported below are from the original capstone
-> pipeline and contain a known data leakage defect: 905 Celeb-DF videos were included in the
-> training/validation splits, inflating all cross-dataset metrics. This project is being rebuilt
-> with corrected methodology — see `ROADMAP.md` for the research protocol. Do not cite the numbers
-> below as valid external evaluation results.
+> ⚠️ **Research Integrity Notice**: The results below are from the original capstone pipeline
+> (trained on FF++ + DFDC). An earlier audit suspected that Celeb-DF had leaked into training; a
+> 2026-11-28 verification showed the leaked entries exist only in the split *lists* and were never
+> used to train any model (`RESEARCH_ANALYSIS.md` §1.2(a)). The Celeb-DF 0.65 is therefore a real
+> cross-dataset number. "Test (External) 0.9695" in `results.txt` is mislabelled — it is the
+> internal test set. The project is being rebuilt with a stricter protocol — see `ROADMAP.md`.
 
 An end-to-end **Deepfake Detection** pipeline combining:
 
@@ -188,10 +189,10 @@ streamlit run app.py
 
 ## 📊 Results (summary)
 
-> ⚠️ **These results are from the contaminated pipeline.** See integrity notice at the top.
+> ⚠️ **These results are from the legacy capstone pipeline.** See integrity notice at the top.
 
 * Internal (example): Training OOF AUC ≈ 0.99, Val AUC ≈ 0.97, Internal Test AUC ≈ 0.97.
-* ~~External (Celeb-DF): AUC ≈ 0.65~~ — **Invalidated.** Celeb-DF was in the training data. See `RESEARCH_ANALYSIS.md` §1.2 for details.
+* External (Celeb-DF, trained on FF++ + DFDC): AUC ≈ 0.65 (95 % CI 0.62–0.68, n = 1168; re-measured in `P1-T2`). Verified not contaminated — see `RESEARCH_ANALYSIS.md` §1.2(a).
 
 ---
 

@@ -58,7 +58,7 @@ C-06:
     - C-06_roc_seen_vs_unseen_data.csv
     - C-06_roc_seen_vs_unseen.md
 C-07:
-  phase: 1
+  phase: 4
   kind: auto
   title: AMP fix diff and loss curves
   files:
@@ -137,12 +137,12 @@ C-14:
 C-15:
   phase: 4
   kind: auto
-  title: Honest versus inflated comparison
+  title: Capstone versus FF++-only comparison
   files:
-    - C-15_honest_vs_inflated.png
-    - C-15_honest_vs_inflated.pdf
-    - C-15_honest_vs_inflated_data.csv
-    - C-15_honest_vs_inflated.md
+    - C-15_capstone_vs_ffpp_only.png
+    - C-15_capstone_vs_ffpp_only.pdf
+    - C-15_capstone_vs_ffpp_only_data.csv
+    - C-15_capstone_vs_ffpp_only.md
 C-16:
   phase: 4
   kind: auto

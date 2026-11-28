@@ -51,11 +51,11 @@ to the owner. Neither side proceeds on a contested Level B or C point until the 
 must never appear in a training split, a validation split, hyperparameter selection, early stopping,
 or threshold tuning.
 
-> This project's original results were invalidated by exactly this: `split_dataset.ipynb:180`
-> carried the comment *"we include in entries but you'll not use them for training"*, then appended
-> Celeb-DF to `entries`, which was shuffled into every split. 905 of 5000 training videos were
-> Celeb-DF, and the published "external" AUC was measured largely on trained-on data. **If you are
-> ever tempted to add an eval dataset to a training list "just to check something," don't.**
+> This project nearly broke exactly this: `split_dataset.ipynb:180` carried the comment *"we include
+> in entries but you'll not use them for training"*, then appended Celeb-DF to `entries`, which was
+> shuffled into every split list — 905 of 5000 training entries. It was luck, not design, that no
+> model was trained from those lists (verified 2026-11-28, `RESEARCH_ANALYSIS.md` §1.2(a)). **If you
+> are ever tempted to add an eval dataset to a training list "just to check something," don't.**
 
 **2. Never tune on a test set.** Use the FF++ validation split for every decision. If you need a
 number from a test set to make a choice, the choice is wrong.
@@ -323,12 +323,15 @@ false content.
 
 ## 9. Known defects and their status
 
-| Defect | Location | Status (all still present in the code as of 2026-11-21) |
+| Defect | Location | Status (updated for verified source fixes; task acceptance remains separate) |
 |---|---|---|
-| Celeb-DF leaked into train/val/test | `split_dataset.ipynb:180` | Open — to be fixed in `P3-T4` |
-| `-1e9` mask overflows fp16, blocks AMP | `models.py:85` | Open — to be fixed in `P1-T3` |
-| `test_internal` fallback mislabels test set as "External" | `build_features.py:218`, `train_ensemble_final.py:50-54` | Open — to be fixed in `P1-T3` |
-| Hardcoded unsupported "99.2%" accuracy | `app.py:866` | Open — to be fixed in `P1-T3` |
+| Celeb-DF listed in train/val/test split lists | `split_dataset.ipynb:180`, `data/*.txt` | Open in the lists — rebuilt in `P3-T4`. Verified 2026-11-28 that no trained model consumed them. |
+| `-1e9` mask overflows fp16, blocks AMP | `models.py:85` | Source fixed in `P1-T3` (2026-11-24): CPU/CUDA fp16 forward/backward regression passes. AMP re-enable and the C-07 curves moved to `P4-T1` (owner decision 2026-11-28). |
+| Duplicate `-1e9` mask in the legacy temporal script | `src/process_data/train_temporal.py` `AttentionPool` | Open — fix with the AMP re-enable in `P4-T1` (same change as `P1-T3` Fix 1). |
+| Spatial-head loader applies none of the trained weights (`head.` prefix stripped, `strict=False`) | `build_features.py:31-78` | Open — fix before `P4-T1` rebuilds the legacy ensemble; the capstone's spatial features came from an untrained head. |
+| `test_internal` fallback mislabels test set as "External" | `build_features.py:218`, `train_ensemble_final.py:50-54` | Source fixed in `P1-T3` (2026-11-24): explicit internal test.npz required, no silent split substitution; missing-data/label regressions pass. |
+| Hardcoded unsupported "99.2%" accuracy | `app.py:866` | Removed in `P1-T3` (2026-11-24); no replacement metric invented. |
+| Spatial `pos_weight` computed from the whole `labels.json` (incl. eval labels), not the train split | `notebooks/train_spatial.ipynb` cell 4 | Open (minor: one class-ratio scalar, no sample exposure) — `P4-T1` computes it from the training split. |
 | Stale absolute OneDrive paths | `data/*.txt` | Open — to be fixed in `P3-T4` |
 | 8 frames per video (cannot support temporal claims) | `extract_frames.ipynb:34` | Open — to be fixed in `P3-T3` (→32) |
 | EfficientNet-B3 run at 224px, native is 300 | `models.py:31` | Open — to be addressed in `P4-T2` |
