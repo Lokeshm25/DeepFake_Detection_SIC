@@ -351,8 +351,9 @@ screenshots of code output.
   capture checker (P0-T4), environment freeze (P0-T3), Mamba test (P0-T1), old system archived
   (P1-T1), Celeb-DF re-measured (P1-T2 / SPEC-002), three fixes (P1-T3). **Phase 1 gate passes**
   after you moved C-07 (the faster-training proof) to Phase 4.
-- **Mamba engine:** Ubuntu 22.04 installed in WSL2 on Nov 28 so the fast CUDA version can be
-  built (see C-01 and P0-T1's addendum for the result).
+- **Mamba engine: the fast version works.** Ubuntu 22.04 was installed in WSL2 on Nov 28. The real
+  `mamba-ssm` now runs on your GPU, gives the same numbers as the checked PyTorch version, and is
+  about 240× faster. Training runs inside Ubuntu from now on.
 - **SPEC-003** (the second experiment + GAN track) approved in principle; four details are open.
 
 **Waiting on you:**
